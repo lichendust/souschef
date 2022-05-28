@@ -1,0 +1,13 @@
+/.souschef/
+
+/bat/
+/build/
+/media/
+/client/
+/server/
+/project/
+
+*.sublime*
+
+_*
+*_.*
