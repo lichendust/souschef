@@ -17,6 +17,21 @@ type hash struct {
 	word string
 }
 
+func (h hash) String() string {
+	return h.word
+}
+
+func (a *hash) UnmarshalText(text []byte) error {
+	str := string(text)
+	a.uint32 = uint32_from_string(str)
+	a.word   = str
+	return nil
+}
+
+func (a hash) MarshalText() ([]byte, error) {
+	return []byte(a.word), nil
+}
+
 func new_hash(input string) hash {
 	return hash {
 		uint32_from_string(input),

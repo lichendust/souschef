@@ -5,15 +5,18 @@ import (
 	"strings"
 	"unicode"
 	"os/exec"
+	// "path/filepath"
 )
 
-type backend_blender struct {}
-
-func (blender backend_blender) build_command(job *job) *exec.Cmd {
-	return exec.Command("C:/Program Files/Blender Foundation/Blender 3.1/blender.exe", "-b", "--python-expr", build_python_expression(job), job.source_path, "-a")
+func bank_command(job *Job) *exec.Cmd {
+	return exec.Command("bat", "pack", job.Source_Path, job.Target_Path)
 }
 
-func (blender backend_blender) check_progress(input string) string {
+func build_command(job *Job) *exec.Cmd {
+	return exec.Command("C:/Program Files/Blender Foundation/Blender 3.1/blender.exe", "-b", "--python-expr", build_python_expression(job), job.Source_Path, "-a")
+}
+
+func check_progress(input string) string {
 	buffer := strings.Builder {}
 
 	if strings.HasPrefix(input, "Fra:") {
@@ -35,7 +38,7 @@ func (blender backend_blender) check_progress(input string) string {
 	return buffer.String()
 }
 
-func (blender backend_blender) check_errors(input string) sous_error {
+func check_errors(input string) sous_error {
 	switch true {
 	case strings.Contains(input, "std::bad_alloc"):
 		return NO_MEMORY
@@ -61,29 +64,29 @@ func (blender backend_blender) check_errors(input string) sous_error {
 	return ALL_GOOD
 }
 
-const (
-	py_true  = "True\n"
-	py_false = "False\n"
+func build_python_expression(job *Job) string {
+	const (
+		py_true  = "True\n"
+		py_false = "False\n"
 
-	base      = "import bpy\n"
-	tiling    = "bpy.context.scene.cycles.use_auto_tile = "
-	overwrite = "bpy.context.scene.render.use_overwrite = "
-)
+		base      = "import bpy\n"
+		tiling    = "bpy.context.scene.cycles.use_auto_tile = "
+		overwrite = "bpy.context.scene.render.use_overwrite = "
+	)
 
-func build_python_expression(job *job) string {
 	buffer := strings.Builder {}
-	buffer.Grow(1024)
+	buffer.Grow(512)
 
 	buffer.WriteString(base)
 
-	if job.blender_target >= 3 {
+	if job.Blender_Target >= 3 {
 		buffer.WriteString(tiling)
 		buffer.WriteString(py_true)
 	}
 
 	buffer.WriteString(overwrite)
 
-	if job.overwrite {
+	if job.Overwrite {
 		buffer.WriteString(py_true)
 	} else {
 		buffer.WriteString(py_false)

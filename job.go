@@ -1,106 +1,108 @@
 package main
 
 import (
-	"bufio"
-	"unsafe"
-	"strings"
-	"reflect"
+	"os"
+	"fmt"
+	"time"
+	"bytes"
+	"path/filepath"
+
+	"io/fs"
+	"io/ioutil"
+
+	"github.com/BurntSushi/toml"
 )
 
-type job struct {
-	job_name       string
-	blender_target uint8
+type Job struct {
+	Name           hash       `toml:"name"`
+	Blender_Target uint8      `toml:"blender_target"`
+	Time           time.Time  `toml:"time"`
 
-	source_path string
-	output_path string
+	Source_Path string        `toml:"source_path"`
+	Target_Path string        `toml:"target_path"`
+	Output_Path string        `toml:"output_path"`
 
-	complete   bool
-	overwrite  bool // internal only
+	Complete  bool            `toml:"complete"`
+	Overwrite bool            `toml:"overwrite"`
 }
 
-/*func (job *job) String() {
-	buffer := strings.Builder {}
+func (job *Job) String() string {
+	return fmt.Sprintf("[%s]\nsource %s\ntarget %s\noutput %s\n", job.Name.word, job.Source_Path, job.Target_Path, job.Output_Path)
+}
 
-	t := reflect.ValueOf(*job)
+func serialise_job(job *Job, file_path string) {
+	buffer := bytes.Buffer {}
+	buffer.Grow(256)
 
-	buffer.Grow(128 * t.NumField())
-
-	for i := 0; i < t.NumField(); i++ {
-	    // ft := t.Field(i)
-
-		if ft.Kind() == reflect.Ptr {
-			ft = ft.Elem()
-		}
-
-	    // fmt.Println(ft)
-
-		varName  := t.Type().Field(i).Name
-		varType  := t.Type().Field(i).Type
-		// varValue := t.Field(i).Interface()
-
-		fmt.Printf("%v %v\n", varName, varType)
-
-		x := t.Field(i).Interface().(string)
-
-		fmt.Println(x)
-
-	    buffer.WriteString(ft.Name)
-	    buffer.WriteString(" = ")
-	    buffer.WriteString(ft.Interface().String())
-	    buffer.WriteRune('\n')
+	if err := toml.NewEncoder(&buffer).Encode(job); err != nil {
+	    panic(err)
 	}
 
-	// fmt.Println(buffer.String())
-}*/
+	if err := ioutil.WriteFile(file_path, buffer.Bytes(), 0777); err != nil {
+		panic(err)
+	}
+}
 
-/*func save_jobs(jobs []*Job, file string) {
-	for _, job := range jobs {
-		if job.Complete {
-			continue
+func unserialise_job(path string) (*Job, bool) {
+	blob, ok := load_file(path)
+
+	if !ok {
+		fmt.Fprintf(os.Stderr, "failed to read job at %q\n", path)
+		return nil, false
+	}
+
+	data := Job {}
+
+	{
+		_, err := toml.Decode(blob, &data)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to parse job at %q\n", path)
+			return nil, false
 		}
+	}
 
-		path := fmt.Sprintf("%s/%s.toml", jobs_path, job.job_name)
-		err  := ioutil.WriteFile(file, []byte(job.String()), 0777)
+	return &data, true
+}
 
+func load_jobs(root string, shallow bool) []*Job {
+	job_list := make([]*Job, 0, 16)
+
+	root = filepath.Join(root, jobs_dir)
+
+	first := true
+	err := filepath.WalkDir(root, func(path string, info fs.DirEntry, err error) error {
 		if err != nil {
 			panic(err)
 		}
-	}
-}*/
 
-func parse_job(blob string) *job {
-	file_buffer := strings.NewReader(blob)
-
-	new_job := job {}
-	structure := reflect.ValueOf(&new_job).Elem()
-
-	{
-		scanner := bufio.NewScanner(file_buffer)
-
-		scanner.Split(bufio.ScanLines)
-
-		for scanner.Scan() {
-			line := strings.TrimSpace(scanner.Text())
-
-			if line == "" {
-				continue
-			}
-
-			part := strings.SplitN(line, "=", 2)
-
-			if len(part) != 2 {
-				panic("bad line")
-			}
-
-			k := strings.TrimSpace(part[0])
-			v := strings.TrimSpace(part[1])
-
-			field := structure.FieldByName(k)
-			field = reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem() // unsafe go brr
-
-			field.SetString(v)
+		if first {
+			first = false
+			return nil
 		}
+
+		if info.IsDir() {
+			return filepath.SkipDir
+		}
+
+		if shallow {
+			job_list = append(job_list, &Job {
+				Name: new_hash(info.Name()),
+			})
+			return nil
+		}
+
+		if x, ok := unserialise_job(path); ok {
+			job_list = append(job_list, x)
+		} else {
+			panic(path) // @error
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		panic(err)
 	}
 
-	return &new_job
+	return job_list
 }

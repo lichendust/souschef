@@ -2,32 +2,51 @@ package main
 
 import (
 	"os"
+	"fmt"
 	"errors"
 	"io/ioutil"
 	"path/filepath"
 )
 
-func find_directory(input string) (string, bool) {
-	{
-		// path := filepath.Join(input, jobs_path)
+func find_project_dir() (string, bool) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "failed to get working directory")
+		return "", false
+	}
 
-		path := input
+	path, ok := recurse_dirs(cwd)
+	if !ok {
+		fmt.Fprintln(os.Stderr, "not a Sous Chef project!")
+		return "", false
+	}
+
+	return path, true
+}
+
+func recurse_dirs(input string) (string, bool) {
+	{
+		path := filepath.Join(input, sous_dir)
 
 		if file_exists(path) {
-			return path, true
+			return input, true
 		}
 	}
 
 	// go up one directory and try again
-	base := filepath.Base(input)
-	input = input[:len(input) - len(base) - 1]
+	input = slice_base(input)
 
 	// break if we've reached the top
 	if len(input) == 0 {
 		return "", false
 	}
 
-	return find_directory(input)
+	return recurse_dirs(input)
+}
+
+func slice_base(input string) string {
+	base := filepath.Base(input)
+	return input[:len(input) - len(base) - 1]
 }
 
 func file_exists(path string) bool {
