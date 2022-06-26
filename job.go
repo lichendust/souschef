@@ -4,6 +4,7 @@ import (
 	"os"
 	"fmt"
 	"time"
+	"sort"
 	"bytes"
 	"path/filepath"
 
@@ -15,7 +16,7 @@ import (
 
 type Job struct {
 	Name           hash      `toml:"name"`
-	Blender_Target uint8     `toml:"blender_target"`
+	Blender_Target string    `toml:"blender_target"`
 	Time           time.Time `toml:"time"`
 
 	Start_Frame uint         `toml:"start_frame"`
@@ -30,6 +31,18 @@ type Job struct {
 
 	// internal
 	complete  bool           `toml:"complete"`
+}
+
+type job_array []*Job
+
+func (jobs job_array) Len() int {
+	return len(jobs)
+}
+func (jobs job_array) Less(i, j int) bool {
+	return jobs[i].Time.Before(jobs[j].Time)
+}
+func (jobs job_array) Swap(i, j int) {
+	jobs[i], jobs[j] = jobs[j], jobs[i]
 }
 
 func (job *Job) String() string {
@@ -71,7 +84,7 @@ func unserialise_job(path string) (*Job, bool) {
 }
 
 func load_jobs(root string, shallow bool) []*Job {
-	job_list := make([]*Job, 0, 16)
+	job_list := make(job_array, 0, 16)
 
 	root = filepath.Join(root, jobs_dir)
 
@@ -109,6 +122,8 @@ func load_jobs(root string, shallow bool) []*Job {
 	if err != nil {
 		panic(err)
 	}
+
+	sort.Sort(job_list)
 
 	return job_list
 }

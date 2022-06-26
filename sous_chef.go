@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 	"bufio"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -20,7 +21,7 @@ func main() {
 		return
 	}
 
-	sous := &sous_chef {}
+	sous := &sous_chef{}
 
 	switch args.command {
 	case COMMAND_INIT:
@@ -62,7 +63,7 @@ func main() {
 			the_job.End_Frame   = args.end_frame
 		}
 
-		the_job.Frame_Count = the_job.End_Frame - the_job.Start_Frame
+		the_job.Frame_Count = the_job.End_Frame - the_job.Start_Frame + 1
 
 		if args.bank_job {
 			the_job.Target_Path    = filepath.Join(sous.project_dir, data_dir, the_job.Name.word)
@@ -74,6 +75,20 @@ func main() {
 		the_job.Output_Path, _ = filepath.Rel(sous.project_dir, the_job.Output_Path)
 
 		serialise_job(the_job, filepath.Join(sous.project_dir, jobs_dir, the_job.Name.word))
+
+		/*if args.bank_job {
+			cmd := exec.Command("bat", "pack", the_job.Source_Path, the_job.Target_Path)
+
+			err := cmd.Start()
+			if err != nil {
+				panic(err)
+			}
+
+			err = cmd.Wait()
+			if err != nil {
+				panic(err)
+			}
+		}*/
 
 		fmt.Printf("created new job %q for scene %q\n", the_job.Name, filepath.Base(the_job.Source_Path))
 
@@ -91,8 +106,9 @@ func main() {
 	}
 }
 
-func (sous *sous_chef) run_job(job *Job) {
-	cmd := build_command(job)
+func run_job(sous *sous_chef, job *Job) {
+	path := fmt.Sprintf(blender_path, job.Blender_Target)
+	cmd := exec.Command(path, "-b", "--python-expr", injected_expression(job), job.Source_Path, "-a")
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

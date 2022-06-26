@@ -3,19 +3,12 @@ package main
 import (
 	"fmt"
 	"bufio"
+	"io/fs"
 	"strings"
 	"unicode"
 	"os/exec"
-	// "path/filepath"
+	"path/filepath"
 )
-
-func bank_command(job *Job) *exec.Cmd {
-	return exec.Command("bat", "pack", job.Source_Path, job.Target_Path)
-}
-
-func build_command(job *Job) *exec.Cmd {
-	return exec.Command("C:/Program Files/Blender Foundation/Blender 3.1/blender.exe", "-b", "--python-expr", build_python_expression(job), job.Source_Path, "-a")
-}
 
 func check_progress(input string) string {
 	buffer := strings.Builder {}
@@ -65,8 +58,7 @@ func check_errors(input string) sous_error {
 	return ALL_GOOD
 }
 
-
-func build_python_expression(job *Job) string {
+func injected_expression(job *Job) string {
 	const (
 		py_true  = "True\n"
 		py_false = "False\n"
@@ -81,7 +73,7 @@ func build_python_expression(job *Job) string {
 
 	buffer.WriteString(base_bpy)
 
-	if job.Blender_Target >= 3 {
+	if job.Blender_Target[1] >= '3' {
 		buffer.WriteString(tiling)
 		buffer.WriteString(py_true)
 	}
@@ -136,4 +128,33 @@ func job_info(job *Job) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func enumerate_installed_versions() []string {
+	first := true
+	array := make([]string, 0, 8)
+
+	err := filepath.WalkDir(system_path, func(path string, info fs.DirEntry, err error) error {
+		if err != nil {
+			panic(err)
+		}
+
+		if first {
+			first = false
+			return nil
+		}
+
+		if info.IsDir() {
+			array = append(array, info.Name()[8:])
+			return filepath.SkipDir
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	return array
 }
