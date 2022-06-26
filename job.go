@@ -14,16 +14,22 @@ import (
 )
 
 type Job struct {
-	Name           hash       `toml:"name"`
-	Blender_Target uint8      `toml:"blender_target"`
-	Time           time.Time  `toml:"time"`
+	Name           hash      `toml:"name"`
+	Blender_Target uint8     `toml:"blender_target"`
+	Time           time.Time `toml:"time"`
 
-	Source_Path string        `toml:"source_path"`
-	Target_Path string        `toml:"target_path"`
-	Output_Path string        `toml:"output_path"`
+	Start_Frame uint         `toml:"start_frame"`
+	End_Frame   uint         `toml:"end_frame"`
+	Frame_Count uint         `toml:"frame_count"`
 
-	Complete  bool            `toml:"complete"`
-	Overwrite bool            `toml:"overwrite"`
+	Source_Path string       `toml:"source_path"`
+	Target_Path string       `toml:"target_path"`
+	Output_Path string       `toml:"output_path"`
+
+	Overwrite bool           `toml:"overwrite"`
+
+	// internal
+	complete  bool           `toml:"complete"`
 }
 
 func (job *Job) String() string {

@@ -55,12 +55,19 @@ func main() {
 			Output_Path: args.output_path,
 		}
 
+		if args.start_frame == 0 && args.end_frame == 0 {
+			job_info(the_job)
+		} else {
+			the_job.Start_Frame = args.start_frame
+			the_job.End_Frame   = args.end_frame
+		}
+
+		the_job.Frame_Count = the_job.End_Frame - the_job.Start_Frame
+
 		if args.bank_job {
 			the_job.Target_Path    = filepath.Join(sous.project_dir, data_dir, the_job.Name.word)
 			the_job.Target_Path, _ = filepath.Rel(sous.project_dir, the_job.Target_Path)
-			the_job.Target_Path = filepath.Join(the_job.Target_Path, filepath.Base(the_job.Source_Path))
-
-			// fmt.Println("calling Blender Asset Tracer...")
+			the_job.Target_Path    = filepath.Join(the_job.Target_Path, filepath.Base(the_job.Source_Path))
 		}
 
 		the_job.Source_Path, _ = filepath.Rel(sous.project_dir, the_job.Source_Path)
@@ -73,17 +80,14 @@ func main() {
 	case COMMAND_LIST:
 		sous.queue = load_jobs(sous.project_dir, false)
 
-		fmt.Println("jobs   banked   target file")
-		fmt.Println("----   ------   -----------")
+		fmt.Println("jobs   target file")
+		fmt.Println("----   -----------")
 		for _, job := range sous.queue {
-			banked := "false"
-
-			if job.Target_Path != "" {
-				banked = "true "
-			}
-
-			fmt.Println(job.Name, " ", banked, "  ", filepath.Base(job.Source_Path))
+			fmt.Println(job.Name, " ", filepath.Base(job.Source_Path), job.Start_Frame, job.End_Frame)
 		}
+
+	case COMMAND_REMOVE:
+		// delete job file here
 	}
 }
 
@@ -127,7 +131,7 @@ func (sous *sous_chef) run_job(job *Job) {
 	}
 
 	// close job
-	job.Complete = true
+	job.complete = true
 }
 
 /*func (sous *sous_chef) serialise_jobs() {

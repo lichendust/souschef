@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"bufio"
 	"strings"
 	"unicode"
 	"os/exec"
@@ -64,12 +65,13 @@ func check_errors(input string) sous_error {
 	return ALL_GOOD
 }
 
+
 func build_python_expression(job *Job) string {
 	const (
 		py_true  = "True\n"
 		py_false = "False\n"
 
-		base      = "import bpy\n"
+		base_bpy  = "import bpy\n"
 		tiling    = "bpy.context.scene.cycles.use_auto_tile = "
 		overwrite = "bpy.context.scene.render.use_overwrite = "
 	)
@@ -77,7 +79,7 @@ func build_python_expression(job *Job) string {
 	buffer := strings.Builder {}
 	buffer.Grow(512)
 
-	buffer.WriteString(base)
+	buffer.WriteString(base_bpy)
 
 	if job.Blender_Target >= 3 {
 		buffer.WriteString(tiling)
@@ -93,4 +95,45 @@ func build_python_expression(job *Job) string {
 	}
 
 	return buffer.String()
+}
+
+func job_info(job *Job) {
+	const expression = `import bpy; print("sous_range", bpy.context.scene.frame_start, bpy.context.scene.frame_end)`
+
+	cmd := exec.Command("C:/Program Files/Blender Foundation/Blender 3.1/blender.exe", "-b", "--python-expr", expression, job.Source_Path)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		panic(err)
+	}
+
+	err = cmd.Start()
+	if err != nil {
+		panic(err)
+	}
+
+	scanner := bufio.NewScanner(stdout)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if strings.HasPrefix(line, "sous_range") {
+			line = strings.TrimSpace(line[10:])
+
+			part := strings.SplitN(line, " ", 2)
+
+			if x, ok := parse_uint(part[0]); ok {
+				job.Start_Frame = x
+			}
+			if x, ok := parse_uint(part[1]); ok {
+				job.End_Frame = x
+			}
+		}
+	}
+
+	err = cmd.Wait()
+
+	if err != nil {
+		panic(err)
+	}
 }

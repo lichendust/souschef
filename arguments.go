@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"fmt"
+	"strings"
 )
 
 const (
@@ -12,6 +13,7 @@ const (
 
 	COMMAND_JOB
 	COMMAND_LIST
+	COMMAND_REMOVE
 )
 
 type arguments struct {
@@ -19,6 +21,9 @@ type arguments struct {
 	bank_job    bool
 	source_path string
 	output_path string
+
+	start_frame uint
+	end_frame   uint
 }
 
 // extracts arguments in the array as
@@ -94,6 +99,11 @@ func get_arguments() (*arguments, bool) {
 				args = args[1:]
 				continue
 
+			case "remove":
+				conf.command = COMMAND_REMOVE
+				args = args[1:]
+				continue
+
 			case "help":
 				conf.command = COMMAND_HELP
 				return conf, true // exit immediately
@@ -114,6 +124,26 @@ func get_arguments() (*arguments, bool) {
 
 		case "bank", "b":
 			conf.bank_job = true
+			continue
+
+		case "frame", "f":
+			counter ++
+			part := strings.SplitN(b, ":", 2)
+
+			switch len(part) {
+			case 1:
+				if x, ok := parse_uint(part[0]); ok {
+					conf.end_frame = x
+				}
+				conf.start_frame = 1
+			case 2:
+				if x, ok := parse_uint(part[0]); ok {
+					conf.start_frame = x
+				}
+				if x, ok := parse_uint(part[1]); ok {
+					conf.end_frame = x
+				}
+			}
 			continue
 
 		case "version":
