@@ -3,11 +3,9 @@ package main
 import (
 	"fmt"
 	"bufio"
-	"io/fs"
+	"os/exec"
 	"strings"
 	"unicode"
-	"os/exec"
-	"path/filepath"
 )
 
 func check_progress(input string) string {
@@ -62,24 +60,19 @@ func injected_expression(job *Job) string {
 	const (
 		py_true  = "True\n"
 		py_false = "False\n"
-
-		base_bpy  = "import bpy\n"
-		tiling    = "bpy.context.scene.cycles.use_auto_tile = "
-		overwrite = "bpy.context.scene.render.use_overwrite = "
 	)
 
 	buffer := strings.Builder {}
 	buffer.Grow(512)
 
-	buffer.WriteString(base_bpy)
+	buffer.WriteString("import bpy\n")
 
-	if job.Blender_Target[1] >= '3' {
-		buffer.WriteString(tiling)
-		buffer.WriteString(py_true)
-	}
+	// auto-tiling for Blender 3+
+	buffer.WriteString("bpy.context.scene.cycles.use_auto_tile = (bpy.app.version[0] < 3)\n")
 
-	buffer.WriteString(overwrite)
-
+	// whether to overwrite extant frames
+	// (@todo doesn't seem to be working?)
+	buffer.WriteString("bpy.context.scene.render.use_overwrite = ")
 	if job.Overwrite {
 		buffer.WriteString(py_true)
 	} else {
@@ -92,7 +85,7 @@ func injected_expression(job *Job) string {
 func job_info(job *Job) {
 	const expression = `import bpy; print("sous_range", bpy.context.scene.frame_start, bpy.context.scene.frame_end)`
 
-	cmd := exec.Command("C:/Program Files/Blender Foundation/Blender 3.1/blender.exe", "-b", "--python-expr", expression, job.Source_Path)
+	cmd := exec.Command("C:/Program Files/Blender Foundation/Blender 2.93/blender.exe", "-b", job.Source_Path, "--python-expr", expression)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -123,38 +116,5 @@ func job_info(job *Job) {
 		}
 	}
 
-	err = cmd.Wait()
-
-	if err != nil {
-		panic(err)
-	}
-}
-
-func enumerate_installed_versions() []string {
-	first := true
-	array := make([]string, 0, 8)
-
-	err := filepath.WalkDir(system_path, func(path string, info fs.DirEntry, err error) error {
-		if err != nil {
-			panic(err)
-		}
-
-		if first {
-			first = false
-			return nil
-		}
-
-		if info.IsDir() {
-			array = append(array, info.Name()[8:])
-			return filepath.SkipDir
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		panic(err)
-	}
-
-	return array
+	cmd.Wait()
 }

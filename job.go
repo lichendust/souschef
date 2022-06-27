@@ -16,7 +16,7 @@ import (
 
 type Job struct {
 	Name           hash      `toml:"name"`
-	Blender_Target string    `toml:"blender_target"`
+	Blender_Target hash      `toml:"blender_target"`
 	Time           time.Time `toml:"time"`
 
 	Start_Frame uint         `toml:"start_frame"`

@@ -40,6 +40,9 @@ func new_hash(input string) hash {
 }
 
 func uint32_from_string(input string) uint32 {
+	if input == "" {
+		return 0
+	}
 	hash := fnv.New32a()
 	hash.Write([]byte(input))
 	return hash.Sum32()

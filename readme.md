@@ -13,6 +13,7 @@ It helps with partitioning scenes and dependencies for rendering, as well as que
 - [Usage](#usage)
 	- [Jobs](#jobs)
 	- [Render Queue](#render-queue)
+- [Version Control](#version-control)
 - [Blender Asset Tracer](#blender-asset-tracer)
 	- [Installing BAT](#installing-bat)
 	- [Windows Users and the Subsystem](#windows-users-and-the-subsystem)
@@ -52,6 +53,15 @@ Creating a job is not *starting* a job.  Sous Chef can, once jobs have been crea
 - Start and render the job queue, remaining alive and watching the job directory for new ones to be added by other instances of Sous Chef.
 
 The latter allows Sous Chef to run in "server mode" without requiring any actual server configuration.  Pointing an additional rendering machine at a NAS fileshare directory shared by multiple users allows it to watch for their ongoing jobs.  Each user simply uses Sous Chef as they would locally.  The job is then written onto the fileshare, where the host computer will scoop up the new jobs and add them to the end of the queue.
+
+## Version Control
+
+If you use project-wide version control, it is recommended to add exclusion rules for —
+
++ `.souschef/jobs`
++ `.souschef/data`
+
+— but check in everything else, like the project configuration file.
 
 ## Blender Asset Tracer
 

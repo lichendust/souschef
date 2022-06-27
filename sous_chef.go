@@ -25,7 +25,16 @@ func main() {
 
 	switch args.command {
 	case COMMAND_INIT:
-		fmt.Println("not implemented yet!")
+		if !make_directory(jobs_dir) {
+			return
+		}
+		if !make_directory(data_dir) {
+			return
+		}
+		if !write_file(config_file, default_config_file) {
+			return
+		}
+		fmt.Println("initialised Sous Chef project")
 		return
 
 	case COMMAND_HELP:
@@ -46,8 +55,14 @@ func main() {
 
 	switch args.command {
 	case COMMAND_JOB:
-		args.source_path = filepath.Join(sous.project_dir, args.source_path)
-		args.output_path = filepath.Join(sous.project_dir, args.output_path)
+		config, ok := load_config(filepath.Join(sous.project_dir, config_file))
+
+		if !ok {
+			return
+		}
+
+		args.source_path, _ = filepath.Abs(args.source_path)
+		args.output_path, _ = filepath.Abs(args.output_path)
 
 		the_job := &Job {
 			Name:        new_name(),
@@ -56,23 +71,31 @@ func main() {
 			Output_Path: args.output_path,
 		}
 
+		if args.blender_target == "" {
+			if config.Default_Target.uint32 == 0 {
+				fmt.Fprintln(os.Stderr, "no valid Blender target in config.toml, or specified as an argument")
+				return
+			}
+
+			the_job.Blender_Target = config.Default_Target
+		}
+
 		if args.start_frame == 0 && args.end_frame == 0 {
 			job_info(the_job)
 		} else {
 			the_job.Start_Frame = args.start_frame
 			the_job.End_Frame   = args.end_frame
 		}
-
-		the_job.Frame_Count = the_job.End_Frame - the_job.Start_Frame + 1
-
-		if args.bank_job {
-			the_job.Target_Path    = filepath.Join(sous.project_dir, data_dir, the_job.Name.word)
-			the_job.Target_Path, _ = filepath.Rel(sous.project_dir, the_job.Target_Path)
-			the_job.Target_Path    = filepath.Join(the_job.Target_Path, filepath.Base(the_job.Source_Path))
-		}
+		the_job.Frame_Count = the_job.End_Frame - the_job.Start_Frame
 
 		the_job.Source_Path, _ = filepath.Rel(sous.project_dir, the_job.Source_Path)
 		the_job.Output_Path, _ = filepath.Rel(sous.project_dir, the_job.Output_Path)
+
+		if args.bank_job {
+			the_job.Target_Path = filepath.Join(data_dir, the_job.Name.word, filepath.Base(the_job.Source_Path))
+		} else {
+			the_job.Target_Path = the_job.Source_Path
+		}
 
 		serialise_job(the_job, filepath.Join(sous.project_dir, jobs_dir, the_job.Name.word))
 
@@ -107,6 +130,7 @@ func main() {
 }
 
 func run_job(sous *sous_chef, job *Job) {
+	const blender_path = ""
 	path := fmt.Sprintf(blender_path, job.Blender_Target)
 	cmd := exec.Command(path, "-b", "--python-expr", injected_expression(job), job.Source_Path, "-a")
 

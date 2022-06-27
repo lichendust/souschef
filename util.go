@@ -65,6 +65,28 @@ func load_file(path string) (string, bool) {
 	return string(content), true
 }
 
+func make_directory(path string) bool {
+	err := os.MkdirAll(path, os.ModeDir)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create directory %q\n", path)
+		return false
+	}
+
+	return true
+}
+
+func write_file(path, content string) bool {
+	err := ioutil.WriteFile(path, []byte(content), 0777)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to write file %q\n", path)
+		return false
+	}
+
+	return true
+}
+
 func parse_uint(str string) (uint, bool) {
 	u, err := strconv.ParseUint(str, 0, 32)
 	if err != nil {

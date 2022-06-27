@@ -19,8 +19,10 @@ const (
 type arguments struct {
 	command     uint8
 	bank_job    bool
-	source_path string
-	output_path string
+
+	source_path    string
+	output_path    string
+	blender_target string
 
 	start_frame uint
 	end_frame   uint
@@ -124,6 +126,10 @@ func get_arguments() (*arguments, bool) {
 
 		case "bank", "b":
 			conf.bank_job = true
+			continue
+
+		case "target", "t":
+			conf.blender_target = b
 			continue
 
 		case "frame", "f":
