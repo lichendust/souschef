@@ -30,7 +30,7 @@ type Job struct {
 	Overwrite bool           `toml:"overwrite"`
 
 	// internal
-	complete  bool           `toml:"complete"`
+	Complete  bool           `toml:"complete"`
 }
 
 type job_array []*Job
@@ -83,7 +83,7 @@ func unserialise_job(path string) (*Job, bool) {
 	return &data, true
 }
 
-func load_jobs(root string, shallow bool) []*Job {
+func load_jobs(root string, shallow bool) ([]*Job, bool) {
 	job_list := make(job_array, 0, 16)
 
 	root = filepath.Join(root, jobs_dir)
@@ -120,10 +120,11 @@ func load_jobs(root string, shallow bool) []*Job {
 	})
 
 	if err != nil {
-		panic(err)
+		// @error
+		return nil, false
 	}
 
 	sort.Sort(job_list)
 
-	return job_list
+	return job_list, true
 }

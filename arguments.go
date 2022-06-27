@@ -14,11 +14,14 @@ const (
 	COMMAND_JOB
 	COMMAND_LIST
 	COMMAND_REMOVE
+
+	COMMAND_RENDER
 )
 
 type arguments struct {
 	command     uint8
 	bank_job    bool
+	watch_files bool
 
 	source_path    string
 	output_path    string
@@ -101,6 +104,11 @@ func get_arguments() (*arguments, bool) {
 				args = args[1:]
 				continue
 
+			case "render":
+				conf.command = COMMAND_RENDER
+				args = args[1:]
+				continue
+
 			case "remove":
 				conf.command = COMMAND_REMOVE
 				args = args[1:]
@@ -124,8 +132,12 @@ func get_arguments() (*arguments, bool) {
 		case "":
 			break
 
-		case "bank", "b":
+		case "cache", "c":
 			conf.bank_job = true
+			continue
+
+		case "watch", "w":
+			conf.watch_files = true
 			continue
 
 		case "target", "t":
