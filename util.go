@@ -1,11 +1,13 @@
 package main
 
 import (
+	"io/fs"
+	"io/ioutil"
+
 	"os"
 	"fmt"
 	"errors"
 	"strconv"
-	"io/ioutil"
 	"path/filepath"
 )
 
@@ -85,6 +87,39 @@ func write_file(path, content string) bool {
 	}
 
 	return true
+}
+
+func remove_file(path string) bool {
+	err := os.RemoveAll(path)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to delete file %q\n", path)
+		return false
+	}
+
+	return true
+}
+
+func dir_size(root string) (float64, bool) {
+	total := int64(0)
+
+	err := filepath.WalkDir(root, func(path string, file fs.DirEntry, err error) error {
+		if !file.IsDir() {
+			info, err := file.Info()
+
+			if err != nil {
+				panic(err)
+			}
+
+			total += info.Size()
+		}
+		return nil
+	})
+	if err != nil {
+		return 0, false
+	}
+
+	return float64(total) / 1048576, true // size in megabytes
 }
 
 func parse_uint(str string) (uint, bool) {

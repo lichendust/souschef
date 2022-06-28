@@ -38,10 +38,6 @@ func main() {
 	case COMMAND_VERSION:
 		fmt.Println("not implemented yet!")
 		return
-
-	case COMMAND_REMOVE:
-		fmt.Println("not implemented yet!")
-		return
 	}
 
 	project_dir, ok := find_project_dir()
@@ -68,8 +64,28 @@ func main() {
 		}
 		return
 
+	case COMMAND_CLEAN:
+		queue, ok := load_jobs(project_dir, false)
+
+		if !ok {
+			return
+		}
+
+		for _, job := range queue {
+			if args.hard_clean || job.Complete {
+				remove_file(filepath.Join(project_dir, jobs_dir, job.Name.word))
+
+				if strings.HasPrefix(job.Target_Path, sous_dir) {
+					remove_file(filepath.Join(project_dir, data_dir, job.Name.word))
+				}
+
+				fmt.Printf("removed job %q\n", job.Name)
+			}
+		}
+		return
+
 	case COMMAND_JOB:
-		config, ok := load_config(filepath.Join(project_dir, config_file))
+		config, ok := load_config(filepath.Join(project_dir, config_path))
 
 		if !ok {
 			return
@@ -85,6 +101,8 @@ func main() {
 			Output_Path: args.output_path,
 		}
 
+		fmt.Printf("creating job for %s\n", filepath.Base(args.source_path))
+
 		if args.blender_target == "" {
 			if config.Default_Target.uint32 == 0 {
 				fmt.Fprintln(os.Stderr, "no valid Blender target in config.toml, or specified as an argument")
@@ -97,7 +115,9 @@ func main() {
 		}
 
 		if args.start_frame == 0 && args.end_frame == 0 {
+			fmt.Printf("reading info from file...")
 			job_info(the_job)
+			fmt.Printf("\033[2K\r")
 		} else {
 			the_job.Start_Frame = args.start_frame
 			the_job.End_Frame   = args.end_frame
@@ -105,6 +125,8 @@ func main() {
 		the_job.Frame_Count = the_job.End_Frame - the_job.Start_Frame
 
 		if args.bank_job {
+			fmt.Printf("generating cache copy...")
+
 			pack_path := filepath.Join(project_dir, data_dir, the_job.Name.word)
 
 			cmd := exec.Command("bat", "pack", the_job.Source_Path, pack_path)
@@ -120,6 +142,12 @@ func main() {
 			}
 
 			the_job.Target_Path = filepath.Join(data_dir, the_job.Name.word, filepath.Base(the_job.Source_Path))
+
+			fmt.Printf("\033[2K\r")
+
+			if size, ok := dir_size(filepath.Join(project_dir, data_dir, the_job.Name.word)); ok {
+				fmt.Printf("cache size is %.2fMB on disk\n", size)
+			}
 		}
 
 		the_job.Source_Path, _ = filepath.Rel(project_dir, the_job.Source_Path)
@@ -131,7 +159,7 @@ func main() {
 
 		serialise_job(the_job, filepath.Join(project_dir, jobs_dir, the_job.Name.word))
 
-		fmt.Printf("created new job %q for scene %q\n", the_job.Name, filepath.Base(the_job.Source_Path))
+		fmt.Println("finished!")
 
 		return
 
@@ -145,6 +173,11 @@ func main() {
 		queue, ok := load_jobs(project_dir, false)
 
 		if !ok {
+			return
+		}
+
+		if len(queue) == 0 {
+			fmt.Println("no jobs to render!")
 			return
 		}
 

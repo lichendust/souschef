@@ -10,11 +10,9 @@ const (
 	COMMAND_HELP uint8 = iota
 	COMMAND_VERSION
 	COMMAND_INIT
-
-	COMMAND_JOB
 	COMMAND_LIST
-	COMMAND_REMOVE
-
+	COMMAND_JOB
+	COMMAND_CLEAN
 	COMMAND_RENDER
 )
 
@@ -22,6 +20,7 @@ type arguments struct {
 	command     uint8
 	bank_job    bool
 	watch_files bool
+	hard_clean  bool
 
 	source_path    string
 	output_path    string
@@ -109,8 +108,8 @@ func get_arguments() (*arguments, bool) {
 				args = args[1:]
 				continue
 
-			case "remove":
-				conf.command = COMMAND_REMOVE
+			case "clean":
+				conf.command = COMMAND_CLEAN
 				args = args[1:]
 				continue
 
@@ -142,6 +141,10 @@ func get_arguments() (*arguments, bool) {
 
 		case "target", "t":
 			conf.blender_target = b
+			continue
+
+		case "hard":
+			conf.hard_clean = true
 			continue
 
 		case "frame", "f":
