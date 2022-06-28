@@ -1,6 +1,6 @@
 package main
 
-const default_config_file = `# the version to use by default when creating
+const config_file = `# the version to use by default when creating
 # a new job
 default_target = "2.93"
 

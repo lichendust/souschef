@@ -49,17 +49,21 @@ func (job *Job) String() string {
 	return fmt.Sprintf("[%s]\nsource %s\ntarget %s\noutput %s\n", job.Name.word, job.Source_Path, job.Target_Path, job.Output_Path)
 }
 
-func serialise_job(job *Job, file_path string) {
+func serialise_job(job *Job, file_path string) bool {
 	buffer := bytes.Buffer {}
-	buffer.Grow(256)
+	buffer.Grow(512)
 
 	if err := toml.NewEncoder(&buffer).Encode(job); err != nil {
-	    panic(err)
+		fmt.Fprintln(os.Stderr, "failed to encode job file")
+		return false
 	}
 
 	if err := ioutil.WriteFile(file_path, buffer.Bytes(), 0777); err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, "failed to write job file")
+		return false
 	}
+
+	return true
 }
 
 func unserialise_job(path string) (*Job, bool) {

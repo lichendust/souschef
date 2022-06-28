@@ -6,6 +6,7 @@ import (
 	"time"
 	"bufio"
 	"os/exec"
+	"strings"
 	"path/filepath"
 )
 
@@ -24,7 +25,7 @@ func main() {
 		if !make_directory(data_dir) {
 			return
 		}
-		if !write_file(config_file, default_config_file) {
+		if !write_file(config_path, config_file) {
 			return
 		}
 		fmt.Println("initialised Sous Chef project")
@@ -91,6 +92,8 @@ func main() {
 			}
 
 			the_job.Blender_Target = config.Default_Target
+		} else {
+			the_job.Blender_Target = new_hash(args.blender_target)
 		}
 
 		if args.start_frame == 0 && args.end_frame == 0 {
@@ -133,7 +136,7 @@ func main() {
 		return
 
 	case COMMAND_RENDER:
-		config, ok := load_config(filepath.Join(project_dir, config_file))
+		config, ok := load_config(filepath.Join(project_dir, config_path))
 
 		if !ok {
 			return
@@ -153,15 +156,29 @@ func main() {
 				continue
 			}
 
-			ok := run_job(config, the_job, project_dir)
+			fmt.Printf("[%s] %s\n", strings.ToUpper(the_job.Name.word), filepath.Base(the_job.Target_Path))
 
-			if !ok {
-				queue = queue[1:]
-				continue
+			{
+				ok := run_job(config, the_job, project_dir)
+
+				if !ok {
+					fmt.Println("failed!")
+					queue = queue[1:]
+					continue
+				}
 			}
 
-			serialise_job(the_job, filepath.Join(project_dir, jobs_dir, the_job.Name.word))
+			{
+				ok := serialise_job(the_job, filepath.Join(project_dir, jobs_dir, the_job.Name.word))
 
+				if !ok {
+					fmt.Printf("\n")   // preserve the error emitted by serialise_job
+					queue = queue[1:]
+					continue
+				}
+			}
+
+			fmt.Println("\033[2K\rcomplete!")
 			queue = queue[1:]
 		}
 	}
@@ -184,10 +201,11 @@ func run_job(config *config, job *Job, project_dir string) bool {
 		return false
 	}
 
-	path := filepath.Join(project_dir, job.Target_Path)
+	target := filepath.Join(project_dir, job.Target_Path)
+	output := filepath.Join(project_dir, job.Output_Path)
 
 	// @todo we don't use the correct outputs yet!!
-	cmd := exec.Command(blender_path, "-b", path, "--python-expr", injected_expression(job), "-a")
+	cmd := exec.Command(blender_path, "-b", target, "-o", output, "--python-expr", injected_expression(job), "-a")
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -208,7 +226,7 @@ func run_job(config *config, job *Job, project_dir string) bool {
 			line := scanner.Text()
 
 			message := check_progress(line)
-			fmt.Printf("\r%s - %s", job.Name, message)
+			fmt.Printf("\033[2K\r%s", message)
 
 			program_state := check_errors(line)
 			if program_state != ALL_GOOD {

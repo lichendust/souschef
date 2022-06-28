@@ -9,7 +9,7 @@ import (
 )
 
 func check_progress(input string) string {
-	buffer := strings.Builder {}
+	buffer := strings.Builder {} // @todo let's put this buffer in the outer loop above
 
 	if strings.HasPrefix(input, "Fra:") {
 		buffer.Grow(64)
@@ -18,7 +18,7 @@ func check_progress(input string) string {
 		for i, c := range input {
 			if unicode.IsSpace(c) {
 				if strings.Contains(input, "Compositing") {
-					buffer.WriteString(fmt.Sprintf("%s (Compositing)", input[4:i]))
+					buffer.WriteString(fmt.Sprintf("%s (Composite)", input[4:i]))
 				} else {
 					buffer.WriteString(fmt.Sprintf("%s (Render)", input[4:i]))
 				}
