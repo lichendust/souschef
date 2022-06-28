@@ -13,6 +13,7 @@ It helps with partitioning scenes and dependencies for rendering, as well as que
 - [Usage](#usage)
 	- [Jobs](#jobs)
 	- [Render Queue](#render-queue)
+	- [Commands](#commands)
 - [Version Control](#version-control)
 - [Blender Asset Tracer](#blender-asset-tracer)
 	- [Installing BAT](#installing-bat)
@@ -26,9 +27,11 @@ Unlike most farm tools that focus on distributing and managing render workloads 
 
 Rather than many machines running one job, Sous Chef looks after one machine running many jobs.
 
-To briefly explain, Sous Chef creates a directory — `.souschef` — in the root of a production's repository, most likely alongside a similar version control directory like `.git` or `.hg`.  This directory stores a running list of jobs that are queued in the order they arrive in (presently).  Each job *may* hold an entire clone of the target scene and its dependencies, allowing work to progress without fear of changing resources during rendering.
+To briefly explain, Sous Chef creates a directory — `.souschef` — in the root of a production's repository, most likely alongside a similar version control directory like `.git` or `.hg`.  This directory stores a running list of jobs that are queued in the order they arrive in (presently).  Each job may optionally hold an entire clone of the target scene and its dependencies, allowing work to progress without fear of changing resources during rendering.
 
-On a personal device, this allows jobs to be "banked" during a day's work, then running the queue overnight.  On a dedicated computer connected to a NAS, Sous Chef can watch the job directory, allowing multiple artists to submit jobs using the command, rendered on a first-come first-served basis, like a build server.
+On a personal device, this mode allows scenes and their dependencies to be protected and locked while ongoing changes are made to the rest of the project.
+
+On a dedicated computer connected to a NAS hosting the project, Sous Chef can also watch the job directory, allowing multiple artists to submit jobs using the command, rendered on a first-come first-served basis, similar to a build server.
 
 ## Sous Chef?
 
@@ -36,23 +39,33 @@ On a personal device, this allows jobs to be "banked" during a day's work, then 
 
 ## Usage
 
-Sous Chef is a single, portable binary.
+Sous Chef is a single, portable binary that *tries* to contain everything.  It does optionally depend on Python for the caching feature — [see below](#blender-asset-tracer).
 
 ### Jobs
 
 Sous Chef, in its current form, can act in one of two ways in regards to job creation:
 
 - **Live copy**: It can create a job in-place, using the working copy of the film on disk, with obvious concurrency risks (editing assets could cause issues with the ongoing job).
-- **Cache**: It can cache a job's files using [BAT](https://developer.blender.org/source/blender-asset-tracer/browse/master), eliminating concurrency risks at the cost of disk space (a single job could feasibly require a full clone of the entire project, doubling the required disk space for the lifespan of the job).
+- **Cache**: It can cache a job's files using [Blender Asset Tracer](#blender-asset-tracer), eliminating concurrency risks at the cost of disk space (a single job could feasibly require a full clone of the entire project, doubling the required disk space for the lifespan of the job).
 
 ### Render Queue
 
 Creating a job is not *starting* a job.  Sous Chef can, once jobs have been created, start them in two ways:
 
 - Start and render the job queue, exiting when finished.
-- Start and render the job queue, remaining alive and watching the job directory for new ones to be added by other instances of Sous Chef.
+- Start and render the job queue, remaining alive and watching the job directory for new ones to be added by other instances of Sous Chef.  This is the "build server" mode as described above.
 
-The latter allows Sous Chef to run in "server mode" without requiring any actual server configuration.  Pointing an additional rendering machine at a NAS fileshare directory shared by multiple users allows it to watch for their ongoing jobs.  Each user simply uses Sous Chef as they would locally.  The job is then written onto the fileshare, where the host computer will scoop up the new jobs and add them to the end of the queue.
+### Commands
+
+	souschef init
+
+	souschef job
+
+	souschef list
+
+	souschef render
+
+	souschef clean
 
 ## Version Control
 

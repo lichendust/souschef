@@ -1,0 +1,16 @@
+$1Usage$0
+-----
+
+    souschef command [--flags]
+
+$1Commands$0
+--------
+
+    $1init$0     initialise new Sous Chef project
+    $1new$0      create a new job
+    $1list$0     show the list of current jobs
+    $1render$0   start the render queue
+    $1clean$0    remove finished jobs
+    $1help$0     print this message and others
+
+Use $1souschef help [command]$0 for more information on each of the above.

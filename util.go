@@ -8,8 +8,17 @@ import (
 	"fmt"
 	"errors"
 	"strconv"
+	"strings"
 	"path/filepath"
+
+	"github.com/mattn/go-isatty"
 )
+
+var running_in_term = false
+
+func init() {
+	running_in_term = isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())
+}
 
 func find_project_dir() (string, bool) {
 	cwd, err := os.Getwd()
@@ -127,5 +136,24 @@ func parse_uint(str string) (uint, bool) {
 	if err != nil {
 		return 0, false
 	}
+
 	return uint(u), true
+}
+
+const ansi_color_reset  = "\033[0m"
+const ansi_color_accent = "\033[93m"
+
+func apply_color(input string) string {
+	if running_in_term {
+		input = strings.ReplaceAll(input, "$0", ansi_color_reset)
+		input = strings.ReplaceAll(input, "$1", ansi_color_accent)
+		return input
+	}
+	return strip_color(input)
+}
+
+func strip_color(input string) string {
+	input = strings.ReplaceAll(input, "$0", "")
+	input = strings.ReplaceAll(input, "$1", "")
+	return input
 }

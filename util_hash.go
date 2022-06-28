@@ -32,13 +32,6 @@ func (a hash) MarshalText() ([]byte, error) {
 	return []byte(a.word), nil
 }
 
-func new_hash(input string) hash {
-	return hash {
-		uint32_from_string(input),
-		input,
-	}
-}
-
 func uint32_from_string(input string) uint32 {
 	if input == "" {
 		return 0
@@ -46,6 +39,13 @@ func uint32_from_string(input string) uint32 {
 	hash := fnv.New32a()
 	hash.Write([]byte(input))
 	return hash.Sum32()
+}
+
+func new_hash(input string) hash {
+	return hash {
+		uint32_from_string(input),
+		input,
+	}
 }
 
 func new_name() hash {

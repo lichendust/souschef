@@ -11,7 +11,7 @@ const (
 	COMMAND_VERSION
 	COMMAND_INIT
 	COMMAND_LIST
-	COMMAND_JOB
+	COMMAND_NEW
 	COMMAND_CLEAN
 	COMMAND_RENDER
 )
@@ -22,12 +22,12 @@ type arguments struct {
 	watch_files bool
 	hard_clean  bool
 
+	start_frame uint
+	end_frame   uint
+
 	source_path    string
 	output_path    string
 	blender_target string
-
-	start_frame uint
-	end_frame   uint
 }
 
 // extracts arguments in the array as
@@ -44,7 +44,7 @@ func pull_argument(args []string) (string, string) {
 			if c != '-' {
 				break
 			}
-			n++
+			n ++
 		}
 
 		a := args[0]
@@ -69,7 +69,6 @@ func pull_argument(args []string) (string, string) {
 	return "", ""
 }
 
-// process the user input
 func get_arguments() (*arguments, bool) {
 	conf       := &arguments {}
 	args       := os.Args[1:]
@@ -94,7 +93,7 @@ func get_arguments() (*arguments, bool) {
 				continue
 
 			case "job":
-				conf.command = COMMAND_JOB
+				conf.command = COMMAND_NEW
 				args = args[1:]
 				continue
 
@@ -129,8 +128,6 @@ func get_arguments() (*arguments, bool) {
 
 		switch a {
 		case "":
-			break
-
 		case "cache", "c":
 			conf.bank_job = true
 			continue
@@ -197,12 +194,12 @@ func get_arguments() (*arguments, bool) {
 			has_errors = true
 		}
 
-		patharg++
+		patharg ++
 	}
 
-	if conf.command == COMMAND_JOB && conf.source_path == "" {
-		has_errors = true
+	if conf.command == COMMAND_NEW && conf.source_path == "" {
 		fmt.Fprintln(os.Stderr, "no file specified")
+		has_errors = true
 	}
 
 	return conf, !has_errors
