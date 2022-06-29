@@ -19,14 +19,14 @@ func command_render(project_dir string, args *arguments) {
 		return
 	}
 
-	queue, ok := load_jobs(project_dir, false)
+	queue, ok := load_orders(project_dir, false)
 
 	if !ok {
 		return
 	}
 
 	if len(queue) == 0 {
-		fmt.Println("no jobs to render!")
+		fmt.Println("no orders to render!")
 		return
 	}
 
@@ -51,7 +51,7 @@ func command_render(project_dir string, args *arguments) {
 		}
 
 		{
-			ok := serialise_job(the_job, filepath.Join(project_dir, jobs_dir, the_job.Name.word))
+			ok := serialise_job(the_job, manifest_path(project_dir, the_job.Name.word))
 
 			if !ok {
 				fmt.Printf("\n")   // preserve the error emitted by serialise_job
@@ -140,17 +140,21 @@ func injected_expression(job *Job) string {
 
 	buffer.WriteString("import bpy\n")
 
-	// auto-tiling for Blender 3+
-	buffer.WriteString("bpy.context.scene.cycles.use_auto_tile = (bpy.app.version[0] < 3)\n")
+	// always use placeholder for simultaneous instances
+	// (not supported by Sous Chef yet)
+	buffer.WriteString("bpy.context.scene.render.use_placeholder = True\n")
 
 	// whether to overwrite extant frames
-	// (@todo doesn't seem to be working?)
+	// @todo currently always false unless manually edited in the order
 	buffer.WriteString("bpy.context.scene.render.use_overwrite = ")
 	if job.Overwrite {
 		buffer.WriteString(py_true)
 	} else {
 		buffer.WriteString(py_false)
 	}
+
+	// auto-tiling for Blender 3+
+	buffer.WriteString("bpy.context.scene.cycles.use_auto_tile = (bpy.app.version[0] < 3)\n")
 
 	return buffer.String()
 }

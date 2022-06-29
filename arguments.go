@@ -11,7 +11,7 @@ const (
 	COMMAND_VERSION
 	COMMAND_INIT
 	COMMAND_LIST
-	COMMAND_NEW
+	COMMAND_ORDER
 	COMMAND_CLEAN
 	COMMAND_RENDER
 )
@@ -92,8 +92,8 @@ func get_arguments() (*arguments, bool) {
 				args = args[1:]
 				continue
 
-			case "job":
-				conf.command = COMMAND_NEW
+			case "order":
+				conf.command = COMMAND_ORDER
 				args = args[1:]
 				continue
 
@@ -197,7 +197,7 @@ func get_arguments() (*arguments, bool) {
 		patharg ++
 	}
 
-	if conf.command == COMMAND_NEW && conf.source_path == "" {
+	if conf.command == COMMAND_ORDER && conf.source_path == "" {
 		fmt.Fprintln(os.Stderr, "no file specified")
 		has_errors = true
 	}

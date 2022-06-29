@@ -21,7 +21,7 @@ for f in $build_dir/*; do
 
 	name=${base/"_"/"_$1_"}
 
-	# cp -n license $f/license.txt
+	cp -n license $f/license.txt
 
 	pushd $f > /dev/null
 	zip -r "../$name.zip" * > /dev/null

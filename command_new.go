@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-func command_new(project_dir string, args *arguments) {
+func command_order(project_dir string, args *arguments) {
 	config, ok := load_config(filepath.Join(project_dir, config_path))
 
 	if !ok {
@@ -52,7 +52,7 @@ func command_new(project_dir string, args *arguments) {
 	if args.bank_job {
 		fmt.Printf("generating cache copy...")
 
-		pack_path := filepath.Join(project_dir, data_dir, the_job.Name.word)
+		pack_path := order_path(project_dir, the_job.Name.word)
 
 		cmd := exec.Command("bat", "pack", the_job.Source_Path, pack_path)
 
@@ -66,11 +66,11 @@ func command_new(project_dir string, args *arguments) {
 			panic(err)
 		}
 
-		the_job.Target_Path = filepath.Join(data_dir, the_job.Name.word, filepath.Base(the_job.Source_Path))
+		the_job.Target_Path = filepath.Join(order_dir, the_job.Name.word, filepath.Base(the_job.Source_Path))
 
 		fmt.Printf("\033[2K\r")
 
-		if size, ok := dir_size(filepath.Join(project_dir, data_dir, the_job.Name.word)); ok {
+		if size, ok := dir_size(pack_path); ok {
 			fmt.Printf("cache size is %.2fMB on disk\n", size)
 		}
 	}
@@ -82,7 +82,7 @@ func command_new(project_dir string, args *arguments) {
 		the_job.Target_Path = the_job.Source_Path
 	}
 
-	serialise_job(the_job, filepath.Join(project_dir, jobs_dir, the_job.Name.word))
+	serialise_job(the_job, manifest_path(project_dir, the_job.Name.word))
 
 	fmt.Println("finished!")
 }

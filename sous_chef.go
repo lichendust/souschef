@@ -45,8 +45,8 @@ func main() {
 		command_clean(project_dir, args)
 		return
 
-	case COMMAND_NEW:
-		command_new(project_dir, args)
+	case COMMAND_ORDER:
+		command_order(project_dir, args)
 		return
 
 	case COMMAND_RENDER:

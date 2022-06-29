@@ -1,4 +1,4 @@
-Render will start the job queue, rendering each job sequentially.  If any job fails, at any stage, it warn the failure and progress to the next one in the queue.
+Render will start the order queue, rendering each order sequentially.  If any order fails, at any stage, it warn the failure and progress to the next one in the queue.
 
 $1Usage$0
 -----
@@ -10,4 +10,4 @@ $1Watch$0
 
     $1--watch -w$0
 
-Enabling "watch" mode will cause Sous Chef to remain alive even if there are no available jobs, watching the jobs directory for new additions.  In this mode Sous Chef *will* automatically delete finished jobs and any associated cache data to save space.
+Enabling "watch" mode will cause Sous Chef to remain alive even if there are no available orders, watching the orders directory for new additions.  In this mode Sous Chef *will* automatically delete finished orders and any associated cache data to save space.

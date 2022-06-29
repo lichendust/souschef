@@ -11,7 +11,7 @@ It helps with partitioning scenes and dependencies for rendering, as well as que
 - [Manifesto](#manifesto)
 - [Sous Chef?](#sous-chef)
 - [Usage](#usage)
-	- [Jobs](#jobs)
+	- [Orders](#orders)
 	- [Render Queue](#render-queue)
 	- [Commands](#commands)
 - [Version Control](#version-control)
@@ -41,19 +41,21 @@ On a dedicated computer connected to a NAS hosting the project, Sous Chef can al
 
 Sous Chef is a single, portable binary that *tries* to contain everything.  It does optionally depend on Python for the caching feature — [see below](#blender-asset-tracer).
 
-### Jobs
+### Orders
 
-Sous Chef, in its current form, can act in one of two ways in regards to job creation:
+In Sous Chef, a render job is called an "order".
 
-- **Live copy**: It can create a job in-place, using the working copy of the film on disk, with obvious concurrency risks (editing assets could cause issues with the ongoing job).
-- **Cache**: It can cache a job's files using [Blender Asset Tracer](#blender-asset-tracer), eliminating concurrency risks at the cost of disk space (a single job could feasibly require a full clone of the entire project, doubling the required disk space for the lifespan of the job).
+Sous Chef, in its current form, can act in one of two ways in regards to order creation:
+
+- **Live copy**: It can create an order in-place, using the working copy of the film on disk, with obvious concurrency risks (editing assets could cause issues with the ongoing order).
+- **Cache**: It can cache an orders's files using [Blender Asset Tracer](#blender-asset-tracer), eliminating concurrency risks at the cost of disk space (a single order could feasibly require a full clone of the entire project, doubling the required disk space for the lifespan of the order).
 
 ### Render Queue
 
-Creating a job is not *starting* a job.  Sous Chef can, once jobs have been created, start them in two ways:
+Creating a order is not *starting* a order.  Sous Chef can, once jobs have been created, start them in two ways:
 
-- Start and render the job queue, exiting when finished.
-- Start and render the job queue, remaining alive and watching the job directory for new ones to be added by other instances of Sous Chef.  This is the "build server" mode as described above.
+- Start and render the order queue, exiting when finished.
+- (⚠ Not implemented yet) Start and render the order queue, remaining alive and watching the order directory for new ones to be added by other instances of Sous Chef.  This is the "build server" mode as described above.
 
 ### Commands
 
@@ -69,12 +71,7 @@ Creating a job is not *starting* a job.  Sous Chef can, once jobs have been crea
 
 ## Version Control
 
-If you use project-wide version control, it is recommended to add exclusion rules for —
-
-+ `.souschef/jobs`
-+ `.souschef/data`
-
-— but check in everything else, like the project configuration file.
+If you use project-wide version control, it is recommended to add exclusion rules for `.souschef/orders`, but check in the project configuration file `.souschef/config.toml`.
 
 ## Blender Asset Tracer
 
@@ -82,7 +79,11 @@ In order to use the cache feature, Sous Chef requires a copy of the [Blender Ass
 
 Sous Chef should not rely on BAT long term.  In an ideal world, BAT would function as an addon or component of Blender with the same stringent upgrade requirements.  As it stands, BAT can sometimes lag behind Blender versions for months or years until a particularly pragmatic Blender developer comes along to maintain it.
 
-I've made some passing attempts at porting BAT to Go for direct inclusion into Sous Chef, but the lack of documentation for the Blender file format — a `.blend` is merely a direct serialisation of Blender's entire runtime scene data structure — and the complexity of BAT, which is 8.5K lines of Python and does significantly more than Sous Chef actually requires, makes maintaining it too time-consuming to not merely recommend just installing BAT.
+The complexity, planned inconsistency and lack of documentation for the Blender file format — a `.blend` is merely a direct serialisation of Blender's entire runtime scene data structure — makes writing an external program that parses it difficult.
+
+This is why Sous Chef actually calls to Blender itself to get information about new orders, by loading the file, having it print relevant information and then closing.  Even Blender's own historical DNA inspectors [use Blender itself](https://developer.blender.org/diffusion/B/browse/master/doc/blender_file_format/) to write the dump.
+
+Directly porting BAT could be an option, but at 8.5K lines of Python, it's very much a non-trivial exercise that would require the attention of a developer who wholly understands BAT itself and the intricacies of Blender's innards.
 
 ### Installing BAT
 
@@ -98,4 +99,4 @@ BAT requires Python 3.10+ (though it seems Python 3+ is generally fine).
 
 If you are using Windows with the Subsystem for Linux, you'll still need to use the Windows build of Sous Chef and install Windows Python.  Mixing a Windows copy of Blender with WSL Python and Sous Chef *could work*, but the spaghetti of path mixing is untenable for me as a maintainer and infuriating to set up correctly for a user.
 
-You can still use `souschef.exe` through WSL, as I do, which works perfectly.
+You can still use `souschef.exe` through WSL, as I do, which works perfectly for relative paths.
