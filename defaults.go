@@ -14,5 +14,5 @@ func order_path(project_dir, name string) string {
 }
 
 func manifest_path(project_dir, name string) string {
-	return filepath.Join(project_dir, order_dir, name, "order.toml")
+	return filepath.Join(project_dir, order_dir, name, order_name)
 }

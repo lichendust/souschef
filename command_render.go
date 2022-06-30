@@ -42,17 +42,14 @@ func command_render(project_dir string, args *arguments) {
 
 		{
 			ok := run_job(config, the_job, project_dir)
-
 			if !ok {
 				fmt.Println("failed!")
 				queue = queue[1:]
 				continue
 			}
 		}
-
 		{
 			ok := serialise_job(the_job, manifest_path(project_dir, the_job.Name.word))
-
 			if !ok {
 				fmt.Printf("\n")   // preserve the error emitted by serialise_job
 				queue = queue[1:]
@@ -83,11 +80,14 @@ func run_job(config *config, job *Job, project_dir string) bool {
 	}
 
 	target := filepath.Join(project_dir, job.Target_Path)
-	output := filepath.Join(project_dir, job.Output_Path)
 
-	format, _ := get_image_types(filepath.Ext(job.Output_Path))
+	// output    := filepath.Join(project_dir, job.Output_Path)
+	// format, _ := get_image_types(filepath.Ext(job.Output_Path))
 
-	cmd := exec.Command(blender_path, "-b", target, "-o", output, "-F", format, "--python-expr", injected_expression(job), "-a")
+	// "-o" output
+	// "-F" format
+
+	cmd := exec.Command(blender_path, "-b", target, "--python-expr", injected_expression(project_dir, job), "-a")
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -129,32 +129,85 @@ func run_job(config *config, job *Job, project_dir string) bool {
 	return true
 }
 
-func injected_expression(job *Job) string {
-	const (
-		py_true  = "True\n"
-		py_false = "False\n"
-	)
+const path_rewriter = `
+import os
+import bpy
 
+from os.path import *
+
+def is_abs(path):
+    if path.startswith("//"):
+        path = "." + path[1:]
+    path = bpy.path.native_pathsep(path)
+    return isabs(path)
+
+def abs_path(path):
+    return normpath(bpy.path.abspath(path))
+
+def dirname(path):
+    return path[:-len(basename(path))]
+
+output_path = bpy.path.native_pathsep("%s")
+source_path = abs_path(bpy.context.scene.render.filepath)
+
+common_paths = []
+
+for node in bpy.context.scene.node_tree.nodes:
+    if node.mute or "ignore" in node.label.lower():
+        continue
+    if node.type == 'OUTPUT_FILE':
+        if is_abs(node.base_path):
+            continue
+        node_path = abs_path(node.base_path)
+        common_paths.append(commonpath([source_path, node_path]))
+
+shortest_common = min(common_paths, key=len)
+
+for node in bpy.context.scene.node_tree.nodes:
+    if node.mute or "ignore" in node.label.lower():
+        continue
+    if node.type == 'OUTPUT_FILE':
+        if is_abs(node.base_path):
+            continue
+        node_path = abs_path(node.base_path)[len(shortest_common) + 1:]
+        node.base_path = join(output_path, node_path) + os.sep
+
+bpy.context.scene.render.filepath = join(output_path, source_path[len(shortest_common) + 1:])
+`
+
+const (
+	py_true  = "True\n"
+	py_false = "False\n"
+)
+
+func injected_expression(project_dir string, job *Job) string {
 	buffer := strings.Builder {}
 	buffer.Grow(512)
 
 	buffer.WriteString("import bpy\n")
 
+	if job.Output_Path != "" {
+		buffer.WriteString(fmt.Sprintf(path_rewriter, filepath.ToSlash(filepath.Join(project_dir, job.Output_Path))))
+	}
+
+	// auto-tiling for Blender 3+
+	buffer.WriteString("bpy.context.scene.cycles.use_auto_tile = (bpy.app.version[0] < 3)\n")
+
 	// always use placeholder for simultaneous instances
 	// (not supported by Sous Chef yet)
 	buffer.WriteString("bpy.context.scene.render.use_placeholder = True\n")
 
+	// @todo experimental for render time testing
+	buffer.WriteString("bpy.context.scene.render.use_render_cache = True\n")
+
 	// whether to overwrite extant frames
-	// @todo currently always false unless manually edited in the order
+	// @todo currently always false unless manually edited in the order file
 	buffer.WriteString("bpy.context.scene.render.use_overwrite = ")
 	if job.Overwrite {
 		buffer.WriteString(py_true)
 	} else {
 		buffer.WriteString(py_false)
 	}
-
-	// auto-tiling for Blender 3+
-	buffer.WriteString("bpy.context.scene.cycles.use_auto_tile = (bpy.app.version[0] < 3)\n")
 
 	return buffer.String()
 }
@@ -294,7 +347,7 @@ func check_progress(job *Job, input string) string {
 	return buffer.String()
 }
 
-func get_image_types(ext string) (string, bool) {
+/*func get_image_types(ext string) (string, bool) {
 	switch strings.ToLower(ext) {
 	case ".bmp":            return "BMP",      true
 	case ".cin", ".cineon": return "CINEON",   true
@@ -310,7 +363,6 @@ func get_image_types(ext string) (string, bool) {
 	case ".webp":           return "WEBP",     true
 	}
 
-	// @todo
 	// "AVIJPEG"
 	// "AVIRAW"
 	// "DDS"
@@ -320,4 +372,4 @@ func get_image_types(ext string) (string, bool) {
 	// "RAWTGA"
 
 	return "", false
-}
+}*/
