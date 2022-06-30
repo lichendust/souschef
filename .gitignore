@@ -1,10 +1,8 @@
 /.souschef/
 
-/bat/
 /build/
 /media/
-/client/
-/server/
+/archive/
 /project/
 
 *.sublime*
