@@ -60,7 +60,8 @@ func serialise_job(job *Job, file_path string) bool {
 	}
 
 	if err := ioutil.WriteFile(file_path, buffer.Bytes(), 0777); err != nil {
-		fmt.Fprintln(os.Stderr, "failed to write job file")
+		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, "failed to write order file")
 		return false
 	}
 
@@ -144,7 +145,13 @@ func init() {
 	rand.Seed(time.Now().Unix())
 }
 
-func new_name() hash {
+func new_name(project_dir string) hash {
 	o := rand.Intn(20) * 4
-	return new_hash(names[o:o + 4])
+	n := names[o:o + 4]
+
+	if file_exists(order_path(project_dir, n)) {
+		return new_name(project_dir)
+	}
+
+	return new_hash(n)
 }

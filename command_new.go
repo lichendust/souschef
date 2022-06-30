@@ -20,13 +20,13 @@ func command_order(project_dir string, args *arguments) {
 	args.output_path, _ = filepath.Abs(args.output_path)
 
 	the_job := &Job {
-		Name:        new_name(),
+		Name:        new_name(project_dir),
 		Time:        time.Now(),
 		Source_Path: args.source_path,
 		Output_Path: args.output_path,
 	}
 
-	fmt.Printf("creating job for %s\n", filepath.Base(args.source_path))
+	fmt.Printf("creating order [%s] for %s\n", the_job.Name.word, filepath.Base(args.source_path))
 
 	if args.blender_target == "" {
 		if config.Default_Target.uint32 == 0 {
@@ -80,6 +80,7 @@ func command_order(project_dir string, args *arguments) {
 
 	if !args.bank_job {
 		the_job.Target_Path = the_job.Source_Path
+		make_directory(order_path(project_dir, the_job.Name.word))
 	}
 
 	serialise_job(the_job, manifest_path(project_dir, the_job.Name.word))

@@ -112,7 +112,7 @@ func run_job(config *config, job *Job, project_dir string) bool {
 
 			program_state := check_errors(line)
 			if program_state != ALL_GOOD {
-				fmt.Println("ERROR", program_state)
+				fmt.Println("error", program_state)
 				break
 			}
 		}
