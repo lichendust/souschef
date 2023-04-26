@@ -1,11 +1,13 @@
 package main
 
 import (
-	"os"
 	"fmt"
 	"time"
 	"sort"
 	"bytes"
+	"bufio"
+	"strings"
+	"os/exec"
 	"math/rand"
 	"path/filepath"
 
@@ -22,16 +24,85 @@ type Job struct {
 
 	Start_Frame uint         `toml:"start_frame"`
 	End_Frame   uint         `toml:"end_frame"`
-	Frame_Count uint         `toml:"frame_count"` // @todo why is this in the save?
+	frame_count uint
+
+	Resolution_X uint        `toml:"resolution_y"`
+	Resolution_Y uint        `toml:"resolution_x"`
 
 	Source_Path string       `toml:"source_path"`
 	Target_Path string       `toml:"target_path"`
 	Output_Path string       `toml:"output_path"`
 
-	Overwrite bool           `toml:"overwrite"`
+	Overwrite bool           `toml:"overwrite,omitempty"`
 
 	// internal
-	Complete  bool           `toml:"complete"`
+	Complete  bool           `toml:"complete,omitempty"`
+}
+
+// there should be better way to do this, but
+// reading Blender files reliably sucks
+func job_info(job *Job) {
+	const expression = `import bpy; print("sous_range", bpy.context.scene.frame_start, bpy.context.scene.frame_end); print("sous_res", bpy.context.scene.render.resolution_x, bpy.context.scene.render.resolution_y)`
+
+	// @todo make this the default installation in config.toml
+	cmd := exec.Command("C:/Program Files/Blender Foundation/Blender 2.93/blender.exe", "-b", job.Source_Path, "--python-expr", expression)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		panic(err)
+	}
+
+	err = cmd.Start()
+	if err != nil {
+		panic(err)
+	}
+
+	scanner := bufio.NewScanner(stdout)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if strings.HasPrefix(line, "sous_range") {
+			line = strings.TrimSpace(line[10:])
+
+			part := strings.SplitN(line, " ", 2)
+
+			if x, ok := parse_uint(part[0]); ok {
+				job.Start_Frame = x
+			}
+			if x, ok := parse_uint(part[1]); ok {
+				job.End_Frame = x
+			}
+		}
+
+		if strings.HasPrefix(line, "sous_res") {
+			line = strings.TrimSpace(line[8:])
+
+			part := strings.SplitN(line, " ", 2)
+
+			if x, ok := parse_uint(part[0]); ok {
+				job.Resolution_X = x
+			}
+			if x, ok := parse_uint(part[1]); ok {
+				job.Resolution_Y = x
+			}
+		}
+	}
+
+	cmd.Wait()
+}
+
+func print_order(i int, order *Job) {
+	complete := ""
+	if order.Complete {
+		complete = "complete!"
+	}
+
+	printf(apply_color("%d \"$1%s$0\" %-20s %d-%d %dx%d %s\n"),
+		i, order.Name, filepath.Base(order.Source_Path),
+		order.Start_Frame, order.End_Frame,
+		order.Resolution_X, order.Resolution_Y,
+		complete)
 }
 
 type order_array []*Job
@@ -46,22 +117,22 @@ func (orders order_array) Swap(i, j int) {
 	orders[i], orders[j] = orders[j], orders[i]
 }
 
-func (job *Job) String() string {
-	return fmt.Sprintf("[%s]\nsource %s\ntarget %s\noutput %s\n", job.Name.word, job.Source_Path, job.Target_Path, job.Output_Path)
+func (order *Job) String() string {
+	return fmt.Sprintf("[%s]\nsource %s\ntarget %s\noutput %s\n", order.Name.word, order.Source_Path, order.Target_Path, order.Output_Path)
 }
 
-func serialise_job(job *Job, file_path string) bool {
+func serialise_job(order *Job, file_path string) bool {
 	buffer := bytes.Buffer {}
 	buffer.Grow(512)
 
-	if err := toml.NewEncoder(&buffer).Encode(job); err != nil {
-		fmt.Fprintln(os.Stderr, "failed to encode job file")
+	if err := toml.NewEncoder(&buffer).Encode(order); err != nil {
+		eprintln("failed to encode order file")
 		return false
 	}
 
 	if err := ioutil.WriteFile(file_path, buffer.Bytes(), 0777); err != nil {
 		fmt.Println(err)
-		fmt.Fprintln(os.Stderr, "failed to write order file")
+		eprintln("failed to write order file")
 		return false
 	}
 
@@ -72,19 +143,21 @@ func unserialise_job(path string) (*Job, bool) {
 	blob, ok := load_file(path)
 
 	if !ok {
-		fmt.Fprintf(os.Stderr, "failed to read job at %q\n", path)
+		eprintf("failed to read order at %q\n", path)
 		return nil, false
 	}
 
-	data := Job {}
+	data := Job{}
 
 	{
 		_, err := toml.Decode(blob, &data)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to parse job at %q\n", path)
+			eprintf("failed to parse order at %q\n", path)
 			return nil, false
 		}
 	}
+
+	data.frame_count = data.End_Frame - data.Start_Frame
 
 	return &data, true
 }

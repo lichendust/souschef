@@ -33,14 +33,21 @@ func command_order(project_dir string, args *arguments) {
 	args.source_path, _ = filepath.Abs(args.source_path)
 	args.output_path, _ = filepath.Abs(args.output_path)
 
+	var name hash
+	if args.replace_id != "" {
+		name = new_hash(args.replace_id)
+	} else {
+		name = new_name(project_dir)
+	}
+
 	the_job := &Job{
-		Name:        new_name(project_dir),
+		Name:        name,
 		Time:        time.Now(),
 		Source_Path: args.source_path,
 		Output_Path: args.output_path,
 	}
 
-	fmt.Printf("creating order [%s] for %s\n", the_job.Name.word, filepath.Base(args.source_path))
+	printf(apply_color("creating order \"$1%s$0\" for %s\n"), the_job.Name.word, filepath.Base(args.source_path))
 
 	if args.blender_target == "" {
 		if config.Default_Target.uint32 == 0 {
@@ -62,7 +69,12 @@ func command_order(project_dir string, args *arguments) {
 		the_job.End_Frame   = args.end_frame
 	}
 
-	the_job.Frame_Count = the_job.End_Frame - the_job.Start_Frame
+	the_job.frame_count = the_job.End_Frame - the_job.Start_Frame
+
+	if args.resolution_x > 0 && args.resolution_y > 0 {
+		the_job.Resolution_X = args.resolution_x
+		the_job.Resolution_Y = args.resolution_y
+	}
 
 	if args.bank_job {
 		fmt.Printf("generating cache copy...")

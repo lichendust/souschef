@@ -22,27 +22,47 @@ import (
 )
 
 const (
-	COMMAND_HELP uint8 = iota
+	COMMAND_ORDER uint8 = iota
 	COMMAND_VERSION
+	COMMAND_HELP
 	COMMAND_INIT
 	COMMAND_LIST
-	COMMAND_ORDER
 	COMMAND_CLEAN
 	COMMAND_RENDER
 )
 
 type arguments struct {
 	command     uint8
-	bank_job    bool
 	watch_files bool
 	hard_clean  bool
 
+	replace_id  string
+
+	// order details
+	bank_job    bool
 	start_frame uint
 	end_frame   uint
+
+	resolution_x uint
+	resolution_y uint
 
 	source_path    string
 	output_path    string
 	blender_target string
+}
+
+func preset_res_table(arg string) (uint, uint) {
+	switch strings.ToLower(arg) {
+	case "uhd":
+		return 3840, 1608
+	case "hd":
+		return 1920, 804
+	case "dcp4k":
+		return 4096, 1716
+	case "dcp2k":
+		return 2048, 858
+	}
+	return 0, 0
 }
 
 // extracts arguments in the array as
@@ -59,7 +79,7 @@ func pull_argument(args []string) (string, string) {
 			if c != '-' {
 				break
 			}
-			n ++
+			n++
 		}
 
 		a := args[0]
@@ -139,7 +159,7 @@ func get_arguments() (*arguments, bool) {
 
 		a, b := pull_argument(args[counter:])
 
-		counter ++
+		counter++
 
 		switch a {
 		case "":
@@ -159,8 +179,34 @@ func get_arguments() (*arguments, bool) {
 			conf.hard_clean = true
 			continue
 
+		case "replace":
+			counter++
+			conf.replace_id = b
+			continue
+
+		case "resolution", "r":
+			counter++
+			part := strings.SplitN(b, ":", 2)
+
+			switch len(part) {
+			case 1:
+				conf.resolution_x, conf.resolution_y = preset_res_table(part[0])
+
+				if conf.resolution_x == 0 {
+					eprintf("unknown preset %q\n", part[0])
+				}
+			case 2:
+				if x, ok := parse_uint(part[0]); ok {
+					conf.resolution_x = x
+				}
+				if y, ok := parse_uint(part[1]); ok {
+					conf.resolution_y = y
+				}
+			}
+			continue
+
 		case "frame", "f":
-			counter ++
+			counter++
 			part := strings.SplitN(b, ":", 2)
 
 			switch len(part) {
@@ -195,7 +241,7 @@ func get_arguments() (*arguments, bool) {
 			has_errors = true
 
 			if b != "" {
-				counter ++
+				counter++
 			}
 		}
 
@@ -209,7 +255,7 @@ func get_arguments() (*arguments, bool) {
 			has_errors = true
 		}
 
-		patharg ++
+		patharg++
 	}
 
 	if conf.command == COMMAND_ORDER && conf.source_path == "" {

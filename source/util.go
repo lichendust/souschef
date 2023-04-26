@@ -29,13 +29,12 @@ import (
 func find_project_dir() (string, bool) {
 	cwd, err := os.Getwd()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "failed to get working directory")
+		eprintln("failed to get working directory -- something is very wrong")
 		return "", false
 	}
 
 	path, ok := recurse_dirs(cwd)
 	if !ok {
-		fmt.Fprintln(os.Stderr, "not a Sous Chef project!")
 		return "", false
 	}
 

@@ -51,6 +51,10 @@ func println(words ...string) {
 	os.Stdout.WriteString("\n")
 }
 
+func printf(format string, guff ...any) {
+	fmt.Fprintf(os.Stdout, format, guff...)
+}
+
 func eprint(words ...string) {
 	l := len(words) - 1
 	for i, w := range words {
@@ -88,7 +92,6 @@ func apply_color(input string) string {
 
 	for {
 		if len(input) == 0 {
-			buffer.WriteRune(last_rune)
 			break
 		}
 

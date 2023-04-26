@@ -18,7 +18,6 @@ package main
 import (
 	"os"
 	"fmt"
-	"path/filepath"
 )
 
 func command_help() {
@@ -45,7 +44,6 @@ func command_init() {
 
 func command_list(project_dir string) {
 	queue, ok := load_orders(project_dir, false)
-
 	if !ok {
 		return
 	}
@@ -56,13 +54,7 @@ func command_list(project_dir string) {
 	}
 
 	for i, job := range queue {
-		complete := ""
-
-		if job.Complete {
-			complete = "complete!"
-		}
-
-		fmt.Println(i + 1, job.Name, " ", filepath.Base(job.Source_Path), " ", job.Start_Frame, job.End_Frame, complete)
+		print_order(i + 1, job)
 	}
 }
 

@@ -122,8 +122,7 @@ func run_job(config *config, job *Job, project_dir string) bool {
 			line := scanner.Text()
 
 			message := check_progress(job, line)
-			// fmt.Printf("\033[2K\r%s", message)
-			fmt.Println(message)
+			printf("\033[2K\r%s", message)
 
 			program_state := check_errors(line)
 			if program_state != ALL_GOOD {
@@ -201,7 +200,7 @@ func injected_expression(project_dir string, job *Job) string {
 
 	buffer.WriteString("import bpy\n")
 
-	if job.Output_Path != "" {
+	if job.Output_Path != "." {
 		buffer.WriteString(fmt.Sprintf(path_rewriter, filepath.ToSlash(filepath.Join(project_dir, job.Output_Path))))
 	}
 
@@ -214,6 +213,12 @@ func injected_expression(project_dir string, job *Job) string {
 	// @todo experimental for render time testing
 	buffer.WriteString("bpy.context.scene.render.use_render_cache = True\n")
 
+	if job.Resolution_X > 0 && job.Resolution_Y > 0 {
+		buffer.WriteString(fmt.Sprintf("bpy.context.scene.render.resolution_x = %d\n", job.Resolution_X))
+		buffer.WriteString(fmt.Sprintf("bpy.context.scene.render.resolution_y = %d\n", job.Resolution_Y))
+		buffer.WriteString("bpy.context.scene.render.resolution_percentage = 100\n")
+	}
+
 	// whether to overwrite extant frames
 	// @todo currently always false unless manually edited in the order file
 	buffer.WriteString("bpy.context.scene.render.use_overwrite = ")
@@ -224,45 +229,6 @@ func injected_expression(project_dir string, job *Job) string {
 	}
 
 	return buffer.String()
-}
-
-// there should be better way to do this, but
-// reading Blender files reliably sucks
-func job_info(job *Job) {
-	const expression = `import bpy; print("sous_range", bpy.context.scene.frame_start, bpy.context.scene.frame_end)`
-
-	cmd := exec.Command("C:/Program Files/Blender Foundation/Blender 2.93/blender.exe", "-b", job.Source_Path, "--python-expr", expression)
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		panic(err)
-	}
-
-	err = cmd.Start()
-	if err != nil {
-		panic(err)
-	}
-
-	scanner := bufio.NewScanner(stdout)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if strings.HasPrefix(line, "sous_range") {
-			line = strings.TrimSpace(line[10:])
-
-			part := strings.SplitN(line, " ", 2)
-
-			if x, ok := parse_uint(part[0]); ok {
-				job.Start_Frame = x
-			}
-			if x, ok := parse_uint(part[1]); ok {
-				job.End_Frame = x
-			}
-		}
-	}
-
-	cmd.Wait()
 }
 
 type sous_error uint8
@@ -347,7 +313,7 @@ func check_progress(job *Job, input string) string {
 				percentage, ok := parse_uint(the_frame)
 
 				if ok {
-					percentage = uint(float64(percentage - job.Start_Frame) / float64(job.Frame_Count) * 100)
+					percentage = uint(float64(percentage - job.Start_Frame) / float64(job.frame_count) * 100)
 				}
 
 				if strings.Contains(input, "Compositing") {
@@ -377,6 +343,7 @@ func check_progress(job *Job, input string) string {
 			}
 		}
 	}
+
 	return buffer.String()
 }
 
