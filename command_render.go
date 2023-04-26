@@ -108,7 +108,8 @@ func run_job(config *config, job *Job, project_dir string) bool {
 			line := scanner.Text()
 
 			message := check_progress(job, line)
-			fmt.Printf("\033[2K\r%s", message)
+			// fmt.Printf("\033[2K\r%s", message)
+			fmt.Println(message)
 
 			program_state := check_errors(line)
 			if program_state != ALL_GOOD {
@@ -193,9 +194,8 @@ func injected_expression(project_dir string, job *Job) string {
 	// auto-tiling for Blender 3+
 	buffer.WriteString("bpy.context.scene.cycles.use_auto_tile = (bpy.app.version[0] < 3)\n")
 
-	// always use placeholder for simultaneous instances
-	// (not supported by Sous Chef yet)
-	buffer.WriteString("bpy.context.scene.render.use_placeholder = True\n")
+	// always remove placeholders because it interferes with restarts
+	buffer.WriteString("bpy.context.scene.render.use_placeholder = False\n")
 
 	// @todo experimental for render time testing
 	buffer.WriteString("bpy.context.scene.render.use_render_cache = True\n")
@@ -212,6 +212,8 @@ func injected_expression(project_dir string, job *Job) string {
 	return buffer.String()
 }
 
+// there should be better way to do this, but
+// reading Blender files reliably sucks
 func job_info(job *Job) {
 	const expression = `import bpy; print("sous_range", bpy.context.scene.frame_start, bpy.context.scene.frame_end)`
 
@@ -342,8 +344,25 @@ func check_progress(job *Job, input string) string {
 				break
 			}
 		}
-	}
 
+		{
+			index := strings.Index(input, "Time:")
+
+			if index > -1 {
+				the_time := strings.TrimSpace(input[index + 5:])
+
+				for i, c := range the_time {
+					if unicode.IsSpace(c) {
+						the_time = the_time[:i]
+						break
+					}
+				}
+
+				buffer.WriteString(" — ")
+				buffer.WriteString(the_time)
+			}
+		}
+	}
 	return buffer.String()
 }
 

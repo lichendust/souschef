@@ -57,8 +57,7 @@ func recurse_dirs(input string) (string, bool) {
 }
 
 func slice_base(input string) string {
-	base := filepath.Base(input)
-	return input[:len(input) - len(base) - 1]
+	return input[:len(input) - len(filepath.Base(input)) - 1]
 }
 
 func file_exists(path string) bool {
@@ -68,7 +67,6 @@ func file_exists(path string) bool {
 
 func load_file(path string) (string, bool) {
 	content, err := ioutil.ReadFile(path)
-
 	if err != nil {
 		return "", false
 	}

@@ -5,11 +5,10 @@ import (
 	"fmt"
 )
 
-const title = "Sous Chef 0.1.0RC"
+const title = "Sous Chef 1.0RC"
 
 func main() {
 	args, ok := get_arguments()
-
 	if !ok {
 		return
 	}
@@ -30,7 +29,6 @@ func main() {
 	}
 
 	project_dir, ok := find_project_dir()
-
 	if !ok {
 		fmt.Fprintln(os.Stderr, "not a Sous Chef project!")
 		return
