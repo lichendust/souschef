@@ -22,7 +22,7 @@ type Job struct {
 
 	Start_Frame uint         `toml:"start_frame"`
 	End_Frame   uint         `toml:"end_frame"`
-	Frame_Count uint         `toml:"frame_count"`
+	Frame_Count uint         `toml:"frame_count"` // @todo why is this in the save?
 
 	Source_Path string       `toml:"source_path"`
 	Target_Path string       `toml:"target_path"`

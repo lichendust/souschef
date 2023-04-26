@@ -1,3 +1,18 @@
+/*
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package main
 
 import (
@@ -11,7 +26,6 @@ import (
 
 func command_order(project_dir string, args *arguments) {
 	config, ok := load_config(filepath.Join(project_dir, config_path))
-
 	if !ok {
 		return
 	}
@@ -19,7 +33,7 @@ func command_order(project_dir string, args *arguments) {
 	args.source_path, _ = filepath.Abs(args.source_path)
 	args.output_path, _ = filepath.Abs(args.output_path)
 
-	the_job := &Job {
+	the_job := &Job{
 		Name:        new_name(project_dir),
 		Time:        time.Now(),
 		Source_Path: args.source_path,
@@ -47,6 +61,7 @@ func command_order(project_dir string, args *arguments) {
 		the_job.Start_Frame = args.start_frame
 		the_job.End_Frame   = args.end_frame
 	}
+
 	the_job.Frame_Count = the_job.End_Frame - the_job.Start_Frame
 
 	if args.bank_job {

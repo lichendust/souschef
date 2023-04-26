@@ -7,9 +7,8 @@
 
 *.sublime*
 
+*.txt
+!text/*.txt
+
 _*
 *_.*
-*.txt
-*.h
-
-!help/*.txt

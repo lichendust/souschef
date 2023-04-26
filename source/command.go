@@ -1,24 +1,36 @@
+/*
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package main
 
 import (
 	"os"
 	"fmt"
-	"strings"
 	"path/filepath"
 )
 
 func command_help() {
-	args := os.Args[1:]
+	println(PROGRAM)
 
-	if len(args) <= 1 {
-		fmt.Println(apply_color(comm_help))
+	args := os.Args[2:]
+	if len(args) == 0 {
+		print(apply_color(help("help")))
 		return
 	}
 
-	switch strings.ToLower(args[0]) {
-	case "render":
-		fmt.Println(apply_color(comm_render))
-	}
+	print(apply_color(help(args[0])))
 }
 
 func command_init() {
@@ -28,7 +40,7 @@ func command_init() {
 	if !write_file(config_path, config_file) {
 		return
 	}
-	fmt.Println("initialised Sous Chef project")
+	println("initialised Sous Chef project")
 }
 
 func command_list(project_dir string) {
@@ -39,7 +51,7 @@ func command_list(project_dir string) {
 	}
 
 	if len(queue) == 0 {
-		fmt.Println("no orders found!")
+		println("no orders found!")
 		return
 	}
 
