@@ -22,12 +22,12 @@ import (
 )
 
 type config struct {
-	Default_Target hash
+	Default_Target string
 	Blender_Target []*blender_version
 }
 
 type blender_version struct {
-	Name hash
+	Name string
 	Path string
 }
 

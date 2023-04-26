@@ -18,8 +18,8 @@ import (
 )
 
 type Job struct {
-	Name           hash      `toml:"name"`
-	Blender_Target hash      `toml:"blender_target"`
+	Name           string    `toml:"name"`
+	Blender_Target string    `toml:"blender_target"`
 	Time           time.Time `toml:"time"`
 
 	Start_Frame uint         `toml:"start_frame"`
@@ -118,7 +118,7 @@ func (orders order_array) Swap(i, j int) {
 }
 
 func (order *Job) String() string {
-	return fmt.Sprintf("[%s]\nsource %s\ntarget %s\noutput %s\n", order.Name.word, order.Source_Path, order.Target_Path, order.Output_Path)
+	return fmt.Sprintf("[%s]\nsource %s\ntarget %s\noutput %s\n", order.Name, order.Source_Path, order.Target_Path, order.Output_Path)
 }
 
 func serialise_job(order *Job, file_path string) bool {
@@ -183,7 +183,7 @@ func load_orders(root string, shallow bool) ([]*Job, bool) {
 
 			if shallow {
 				job_list = append(job_list, &Job {
-					Name: new_hash(name),
+					Name: name,
 				})
 				return nil
 			}
@@ -218,7 +218,7 @@ func init() {
 	rand.Seed(time.Now().Unix())
 }
 
-func new_name(project_dir string) hash {
+func new_name(project_dir string) string {
 	o := rand.Intn(20) * 4
 	n := names[o:o + 4]
 
@@ -226,5 +226,5 @@ func new_name(project_dir string) hash {
 		return new_name(project_dir)
 	}
 
-	return new_hash(n)
+	return n
 }

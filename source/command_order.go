@@ -16,11 +16,9 @@
 package main
 
 import (
-	"os"
-	"os/exec"
-
 	"fmt"
 	"time"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -33,10 +31,8 @@ func command_order(project_dir string, args *arguments) {
 	args.source_path, _ = filepath.Abs(args.source_path)
 	args.output_path, _ = filepath.Abs(args.output_path)
 
-	var name hash
-	if args.replace_id != "" {
-		name = new_hash(args.replace_id)
-	} else {
+	name := args.replace_id
+	if name == "" {
 		name = new_name(project_dir)
 	}
 
@@ -47,17 +43,17 @@ func command_order(project_dir string, args *arguments) {
 		Output_Path: args.output_path,
 	}
 
-	printf(apply_color("creating order \"$1%s$0\" for %s\n"), the_job.Name.word, filepath.Base(args.source_path))
+	printf(apply_color("creating order \"$1%s$0\" for %s\n"), the_job.Name, filepath.Base(args.source_path))
 
 	if args.blender_target == "" {
-		if config.Default_Target.uint32 == 0 {
-			fmt.Fprintln(os.Stderr, "no valid Blender target in config.toml, or specified as an argument")
+		if config.Default_Target == "" {
+			eprintln("no valid Blender target in config.toml, or specified as an argument")
 			return
 		}
 
 		the_job.Blender_Target = config.Default_Target
 	} else {
-		the_job.Blender_Target = new_hash(args.blender_target)
+		the_job.Blender_Target = args.blender_target
 	}
 
 	if args.start_frame == 0 && args.end_frame == 0 {
@@ -79,7 +75,7 @@ func command_order(project_dir string, args *arguments) {
 	if args.bank_job {
 		fmt.Printf("generating cache copy...")
 
-		pack_path := order_path(project_dir, the_job.Name.word)
+		pack_path := order_path(project_dir, the_job.Name)
 
 		cmd := exec.Command("bat", "pack", the_job.Source_Path, pack_path)
 
@@ -93,7 +89,7 @@ func command_order(project_dir string, args *arguments) {
 			panic(err)
 		}
 
-		the_job.Target_Path = filepath.Join(order_dir, the_job.Name.word, filepath.Base(the_job.Source_Path))
+		the_job.Target_Path = filepath.Join(order_dir, the_job.Name, filepath.Base(the_job.Source_Path))
 
 		fmt.Printf("\033[2K\r")
 
@@ -107,10 +103,10 @@ func command_order(project_dir string, args *arguments) {
 
 	if !args.bank_job {
 		the_job.Target_Path = the_job.Source_Path
-		make_directory(order_path(project_dir, the_job.Name.word))
+		make_directory(order_path(project_dir, the_job.Name))
 	}
 
-	serialise_job(the_job, manifest_path(project_dir, the_job.Name.word))
+	serialise_job(the_job, manifest_path(project_dir, the_job.Name))
 
 	fmt.Println("finished!")
 }

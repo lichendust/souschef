@@ -67,7 +67,7 @@ func command_clean(project_dir string, args *arguments) {
 
 	for _, job := range queue {
 		if args.hard_clean || job.Complete {
-			remove_file(order_path(project_dir, job.Name.word))
+			remove_file(order_path(project_dir, job.Name))
 			fmt.Printf("removed job %q\n", job.Name)
 		}
 	}

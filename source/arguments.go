@@ -186,7 +186,7 @@ func get_arguments() (*arguments, bool) {
 
 		case "resolution", "r":
 			counter++
-			part := strings.SplitN(b, ":", 2)
+			part := strings.SplitN(b, "x", 2)
 
 			switch len(part) {
 			case 1:

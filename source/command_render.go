@@ -52,7 +52,7 @@ func command_render(project_dir string, args *arguments) {
 			continue
 		}
 
-		fmt.Printf("[%s] %s\n", strings.ToUpper(the_job.Name.word), filepath.Base(the_job.Target_Path))
+		fmt.Printf("[%s] %s\n", strings.ToUpper(the_job.Name), filepath.Base(the_job.Target_Path))
 
 		{
 			ok := run_job(config, the_job, project_dir)
@@ -63,7 +63,7 @@ func command_render(project_dir string, args *arguments) {
 			}
 		}
 		{
-			ok := serialise_job(the_job, manifest_path(project_dir, the_job.Name.word))
+			ok := serialise_job(the_job, manifest_path(project_dir, the_job.Name))
 			if !ok {
 				fmt.Printf("\n")   // preserve the error emitted by serialise_job
 				queue = queue[1:]
@@ -81,7 +81,7 @@ func run_job(config *config, job *Job, project_dir string) bool {
 	found_path   := false
 
 	for _, target := range config.Blender_Target {
-		if target.Name.uint32 == job.Blender_Target.uint32 {
+		if target.Name == job.Blender_Target {
 			found_path = true
 			blender_path = target.Path
 			break
