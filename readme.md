@@ -159,10 +159,10 @@ Sous Chef also has a very primitive shortcut table, which is currently hard-code
 
 	-r dcp4k
 
-- `UHD` — 3840x1608
-- `HD` — 1920x804
-- `DCP4K` — 4096x1716
-- `DCP2K` — 2048x858
+- `UHD` — 3840 x 2160
+- `HD` — 1920 x 1080
+- `DCP4K` — 4096 x 1716
+- `DCP2K` — 2048 x 858
 
 ### Frame
 
