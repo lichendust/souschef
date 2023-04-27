@@ -15,7 +15,7 @@
 
 package main
 
-const VERSION = "0.0.1"
+const VERSION = "v0.0.1-alpha"
 const PROGRAM = "Sous Chef " + VERSION
 
 func main() {
