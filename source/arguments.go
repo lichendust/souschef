@@ -29,6 +29,8 @@ const (
 	COMMAND_LIST
 	COMMAND_CLEAN
 	COMMAND_RENDER
+	COMMAND_REDO
+	COMMAND_TARGET
 )
 
 type arguments struct {
@@ -54,9 +56,9 @@ type arguments struct {
 func preset_res_table(arg string) (uint, uint) {
 	switch strings.ToLower(arg) {
 	case "uhd":
-		return 3840, 1608
+		return 3840, 2160
 	case "hd":
-		return 1920, 804
+		return 1920, 1080
 	case "dcp4k":
 		return 4096, 1716
 	case "dcp2k":
@@ -144,6 +146,16 @@ func get_arguments() (*arguments, bool) {
 
 			case "clean":
 				conf.command = COMMAND_CLEAN
+				args = args[1:]
+				continue
+
+			case "redo":
+				conf.command = COMMAND_REDO
+				args = args[1:]
+				continue
+
+			case "target":
+				conf.command = COMMAND_TARGET
 				args = args[1:]
 				continue
 

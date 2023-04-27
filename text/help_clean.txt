@@ -1,0 +1,15 @@
+Clean purges the order queue of a project.
+
+$1Clean Usage$0
+-----------
+
+    $1clean [--flags]$0
+
+Clean will, by default, only remove $1completed$0 orders.
+
+$1Hard$0
+----
+
+    $1--hard$0
+
+Removes $1all$0 orders, regardless of status.

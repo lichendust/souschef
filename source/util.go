@@ -16,11 +16,9 @@
 package main
 
 import (
-	"io/fs"
-	"io/ioutil"
-
 	"os"
 	"fmt"
+	"io/fs"
 	"errors"
 	"strconv"
 	"path/filepath"
@@ -71,7 +69,7 @@ func file_exists(path string) bool {
 }
 
 func load_file(path string) (string, bool) {
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return "", false
 	}
@@ -91,7 +89,7 @@ func make_directory(path string) bool {
 }
 
 func write_file(path, content string) bool {
-	err := ioutil.WriteFile(path, []byte(content), 0777)
+	err := os.WriteFile(path, []byte(content), 0777)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to write file %q\n", path)

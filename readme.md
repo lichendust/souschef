@@ -88,7 +88,7 @@ You can also specify the output location with a second unflagged argument —
 
 	souschef path/to/file.blend some/render/frame_######
 
-The file paths for output are actually capable of taking into account file nodes in addition to standard compositor output.  Files can be set up for normal use, as if Sous Chef didn't exist.  If the path is then overriden in a Sous Chef order, the program tries its very best to untangle all of the paths and move everything seamlessly to a new output location, preserving the various outputs' own relativity in that new directory.  This *may be buggy right now*.  You have been warned.
+The file paths for output are actually capable of taking into account file nodes in addition to standard compositor output.  Files can be set up for normal use, as if Sous Chef didn't exist.  If the path is then overridden in a Sous Chef order, the program tries its very best to untangle all of the paths and move everything seamlessly to a new output location, preserving the various outputs' own relativity in that new directory.  This *may be buggy right now*.  You have been warned.
 
 Sous Chef can act in one of two ways in regards to order creation:
 

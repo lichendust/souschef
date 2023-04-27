@@ -1,18 +1,17 @@
 package main
 
 import (
+	"os"
 	"fmt"
 	"time"
 	"sort"
 	"bytes"
 	"bufio"
+	"io/fs"
 	"strings"
 	"os/exec"
 	"math/rand"
 	"path/filepath"
-
-	"io/fs"
-	"io/ioutil"
 
 	"github.com/BurntSushi/toml"
 )
@@ -98,7 +97,7 @@ func print_order(i int, order *Job) {
 		complete = "complete!"
 	}
 
-	printf(apply_color("%d \"$1%s$0\" %-20s %d-%d %dx%d %s\n"),
+	printf(apply_color("%d $1%s$0  %-30s %d-%d %dx%d %s\n"),
 		i, order.Name, filepath.Base(order.Source_Path),
 		order.Start_Frame, order.End_Frame,
 		order.Resolution_X, order.Resolution_Y,
@@ -122,7 +121,7 @@ func (order *Job) String() string {
 }
 
 func serialise_job(order *Job, file_path string) bool {
-	buffer := bytes.Buffer {}
+	buffer := bytes.Buffer{}
 	buffer.Grow(512)
 
 	if err := toml.NewEncoder(&buffer).Encode(order); err != nil {
@@ -130,7 +129,7 @@ func serialise_job(order *Job, file_path string) bool {
 		return false
 	}
 
-	if err := ioutil.WriteFile(file_path, buffer.Bytes(), 0777); err != nil {
+	if err := os.WriteFile(file_path, buffer.Bytes(), 0777); err != nil {
 		fmt.Println(err)
 		eprintln("failed to write order file")
 		return false
@@ -141,7 +140,6 @@ func serialise_job(order *Job, file_path string) bool {
 
 func unserialise_job(path string) (*Job, bool) {
 	blob, ok := load_file(path)
-
 	if !ok {
 		eprintf("failed to read order at %q\n", path)
 		return nil, false

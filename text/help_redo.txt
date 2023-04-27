@@ -1,0 +1,6 @@
+Redo resets an order's completion status so it can be run again, without rebuilding or changing the order's files (if they are cached, for example).
+
+$1Redo Usage$0
+----------
+
+    $1redo [name]$0

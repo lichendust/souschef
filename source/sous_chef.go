@@ -47,18 +47,20 @@ func main() {
 	switch args.command {
 	case COMMAND_LIST:
 		command_list(project_dir)
-		return
 
 	case COMMAND_CLEAN:
 		command_clean(project_dir, args)
-		return
 
 	case COMMAND_ORDER:
 		command_order(project_dir, args)
-		return
 
 	case COMMAND_RENDER:
 		command_render(project_dir, args)
-		return
+
+	case COMMAND_REDO:
+		command_redo(project_dir, args)
+
+	case COMMAND_TARGET:
+		command_targets(project_dir, args)
 	}
 }

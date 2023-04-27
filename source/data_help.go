@@ -36,10 +36,188 @@ $1Commands$0
     $1list$0     show the list of current orders
     $1render$0   start the render queue
     $1clean$0    remove finished orders
+    $1redo$0     reset an order so it can go again
+    $1target$0   view and add Blender targets
     $1help$0     print this message and others
 
 Use $1souschef help [command]$0 for more information on each of 
 the above.
+`
+		case "clean":
+			return `
+Clean purges the order queue of a project.
+
+$1Clean Usage$0
+-----------
+
+    $1clean [--flags]$0
+
+Clean will, by default, only remove $1completed$0 orders.
+
+$1Hard$0
+----
+
+    $1--hard$0
+
+Removes $1all$0 orders, regardless of status.
+`
+		case "init":
+			return `
+Init creates a new Sous Chef project — $1.souschef$0 — in 
+the current working directory, similar to Git or Mercurial.
+
+If you are using version control, it's recommended to place the 
+Sous Chef project in the same location and add exclusion rules 
+for:
+
+    $1.souschef/orders$0  [directory]
+
+$1Init Usage$0
+----------
+
+    $1init$0
+`
+		case "list":
+			return `
+List lists all orders in the current queue and reflects their 
+status (complete or not), if applicable.
+
+$1List Usage$0
+----------
+
+    $1list$0
+`
+		case "order":
+			return `
+Order creates new orders from Blender files in a project 
+repository.
+
+$1Order Usage$0
+------------
+
+    souschef $1order$0 path/to/file.blend [output] [--flags]
+
+Because 'order' is the default command, the keyword can 
+actually be omitted:
+
+    souschef path/to/file.blend [path/to/output] [--flags]
+
+$1Outputs$0
+-------
+
+The file paths for any order outputs are capable of taking into 
+account file nodes in addition to standard compositor output.  
+Files should be set up for normal use, as if Sous Chef didn't 
+exist.  If the path is then overridden in a Sous Chef order, 
+the program tries its very best to untangle all of the paths 
+and move everything seamlessly to a new output location, 
+preserving the various outputs' own relativity in that new 
+directory.
+
+$1Cache$0
+-----
+
+    $1--cache -c$0
+
+Specifies that this order should be cached, which means packed 
+up into a discreet copy and filed away to protect it from 
+ongoing changes.  This feature requires the Blender Asset 
+Tracer.
+
+$1Target$0
+------
+
+    $1--target -t$0
+
+Select a Blender target for your order.  Use $1souschef 
+targets$0 to see the available list in the current project.
+
+$1Replace$0
+-------
+
+    $1--replace name$0
+
+Create a new order with new parameters, but specifically 
+overwrite an existing order.  This will $1not$0 keep its 
+timestamp and will bump it to the back of the queue.  The 
+entire order is rebuilt.
+
+$1Resolution$0
+----------
+
+    $1--resolution -r 1000x1000$0
+
+Overrides the output resolution.  Both X and Y dimensions must 
+be supplied.
+
+There is also an (incomplete) shortcut table of common 
+resolutions:
+
+    $1UHD$0     3840 x 2160
+    $1HD$0      1920 x 1080
+
+    $1DCP4K$0   4096 x 1716
+    $1DCP2K$0   2048 x 858
+
+$1Frame$0
+-----
+
+    $1-f 48$0
+    $1--frame 1:250$0
+
+Overrides the frame-range of the output.  If only one value is 
+supplied, it will used as the end frame, with the starting 
+frame assumed to be 1.
+`
+		case "redo":
+			return `
+Redo resets an order's completion status so it can be run 
+again, without rebuilding or changing the order's files (if 
+they are cached, for example).
+
+$1Redo Usage$0
+----------
+
+    $1redo [name]$0
+`
+		case "render":
+			return `
+Render starts Sous Chef's queue and renders any jobs listed 
+therein.
+
+$1Render Usage$0
+------------
+
+    souschef $1render$0
+
+$1Watch$0
+-----
+
+    $1--watch -w$0
+
+[ALPHA: NOT IMPLEMENTED] Remain alive and watch the project 
+directory for incoming orders, rendering them as they arrive.
+`
+		case "target":
+			return `
+Target allows you to view and edit the available Blender 
+targets in a Sous Chef project.
+
+$1Target Usage$0
+------------
+
+    $1target [name] [path]$0
+
+Target will, by default, list all available targets in the 
+project.
+
+$1Add New$0
+-------
+
+    $1souschef target "name" path/to/blender$0
+
+Specify a target name and filepath to a build of Blender to 
+register a new target.
 `
 	}
 	return help("help")

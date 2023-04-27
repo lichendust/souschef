@@ -1,0 +1,10 @@
+Init creates a new Sous Chef project — $1.souschef$0 — in the current working directory, similar to Git or Mercurial.
+
+If you are using version control, it's recommended to place the Sous Chef project in the same location and add exclusion rules for:
+
+    $1.souschef/orders$0  [directory]
+
+$1Init Usage$0
+----------
+
+    $1init$0

@@ -15,36 +15,31 @@
 
 package main
 
-import (
-	"os"
-	"fmt"
-	"github.com/BurntSushi/toml"
-)
+import "github.com/BurntSushi/toml"
 
 type config struct {
 	Default_Target string
-	Blender_Target []*blender_version
+	Blender_Target []*Blender_Version
 }
 
-type blender_version struct {
+type Blender_Version struct {
 	Name string
 	Path string
 }
 
 func load_config(path string) (*config, bool) {
 	blob, ok := load_file(path)
-
 	if !ok {
-		fmt.Fprintln(os.Stderr, "failed to load config")
+		eprintln("failed to load config")
 		return nil, false
 	}
 
-	data := config {}
+	data := config{}
 
 	{
 		_, err := toml.Decode(blob, &data)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "failed to parse config")
+			eprintln("failed to parse config")
 			return nil, false
 		}
 	}

@@ -1,0 +1,6 @@
+List lists all orders in the current queue and reflects their status (complete or not), if applicable.
+
+$1List Usage$0
+----------
+
+    $1list$0
