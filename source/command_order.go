@@ -101,6 +101,9 @@ func command_order(project_dir string, args *arguments) {
 	the_job.Source_Path, _ = filepath.Rel(project_dir, the_job.Source_Path)
 	the_job.Output_Path, _ = filepath.Rel(project_dir, the_job.Output_Path)
 
+	the_job.Source_Path = filepath.ToSlash(the_job.Source_Path)
+	the_job.Output_Path = filepath.ToSlash(the_job.Output_Path)
+
 	if !args.bank_job {
 		the_job.Target_Path = the_job.Source_Path
 		make_directory(order_path(project_dir, the_job.Name))
