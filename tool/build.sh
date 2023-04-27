@@ -53,12 +53,12 @@ for f in $build_dir/*; do
 	popd > /dev/null
 
 	pushd $build_dir > /dev/null
-	sha512sum "$name.zip" > "$name.sha512sum"
+	sha256sum "$name.zip" > "$name.sha256sum"
 	popd > /dev/null
 done
 
 printf "\n[checksums]\n"
 
 pushd $build_dir > /dev/null
-sha512sum -c *.sha512sum | column -t
+sha256sum -c *.sha256sum | column -t
 popd > /dev/null
