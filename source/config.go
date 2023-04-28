@@ -46,3 +46,37 @@ func load_config(path string) (*config, bool) {
 
 	return &data, true
 }
+
+func get_blender_path(config *config, t string) (string, bool) {
+	blender_path := ""
+	found_path   := false
+
+	if t == "" {
+		t = config.Default_Target
+	}
+
+	for _, target := range config.Blender_Target {
+		if target.Name == t {
+			found_path = true
+			blender_path = target.Path
+			break
+		}
+	}
+
+	if !found_path {
+		for _, target := range config.Blender_Target {
+			if target.Name == config.Default_Target {
+				found_path = true
+				blender_path = target.Path
+				break
+			}
+		}
+
+		if !found_path {
+			eprintln("specified blender target not found in config.toml")
+			return "", false
+		}
+	}
+
+	return blender_path, true
+}

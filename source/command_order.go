@@ -43,7 +43,7 @@ func command_order(project_dir string, args *arguments) {
 		Output_Path: args.output_path,
 	}
 
-	printf(apply_color("creating order \"$1%s$0\" for %s\n"), the_job.Name, filepath.Base(args.source_path))
+	printf(apply_color("creating order [$1%s$0] for %s\n"), the_job.Name, filepath.Base(args.source_path))
 
 	if args.blender_target == "" {
 		if config.Default_Target == "" {
@@ -58,7 +58,7 @@ func command_order(project_dir string, args *arguments) {
 
 	if args.start_frame == 0 && args.end_frame == 0 {
 		fmt.Printf("reading info from file...")
-		job_info(the_job)
+		job_info(config, the_job)
 		fmt.Printf("\033[2K\r")
 	} else {
 		the_job.Start_Frame = args.start_frame

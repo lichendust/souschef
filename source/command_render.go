@@ -16,12 +16,10 @@
 package main
 
 import (
-	"os"
-	"os/exec"
-
 	"fmt"
 	"time"
 	"bufio"
+	"os/exec"
 	"strings"
 	"unicode"
 	"path/filepath"
@@ -34,13 +32,12 @@ func command_render(project_dir string, args *arguments) {
 	}
 
 	queue, ok := load_orders(project_dir, false)
-
 	if !ok {
 		return
 	}
 
 	if len(queue) == 0 {
-		fmt.Println("no orders to render!")
+		println("no orders to render!")
 		return
 	}
 
@@ -52,12 +49,10 @@ func command_render(project_dir string, args *arguments) {
 			continue
 		}
 
-		fmt.Printf("[%s] %s\n", strings.ToUpper(the_job.Name), filepath.Base(the_job.Target_Path))
-
 		{
 			ok := run_job(config, the_job, project_dir)
 			if !ok {
-				fmt.Println("failed!")
+				println("failed!")
 				queue = queue[1:]
 				continue
 			}
@@ -65,31 +60,19 @@ func command_render(project_dir string, args *arguments) {
 		{
 			ok := serialise_job(the_job, manifest_path(project_dir, the_job.Name))
 			if !ok {
-				fmt.Printf("\n")   // preserve the error emitted by serialise_job
+				print("\n") // preserve the error emitted by serialise_job
 				queue = queue[1:]
 				continue
 			}
 		}
 
-		fmt.Println("\033[2K\rcomplete!")
 		queue = queue[1:]
 	}
 }
 
 func run_job(config *config, job *Job, project_dir string) bool {
-	blender_path := ""
-	found_path   := false
-
-	for _, target := range config.Blender_Target {
-		if target.Name == job.Blender_Target {
-			found_path = true
-			blender_path = target.Path
-			break
-		}
-	}
-
-	if !found_path {
-		fmt.Fprintln(os.Stderr, "specified blender target not found in config.toml")
+	blender_path, ok := get_blender_path(config, job.Blender_Target)
+	if !ok {
 		return false
 	}
 
@@ -101,7 +84,7 @@ func run_job(config *config, job *Job, project_dir string) bool {
 	// "-o" output
 	// "-F" format
 
-	cmd := exec.Command(blender_path, "-b", target, "--python-expr", injected_expression(project_dir, job), "-a")
+	cmd := exec.Command(blender_path, "-b", target, "--python-expr", inject(project_dir, job), "-a")
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -122,11 +105,11 @@ func run_job(config *config, job *Job, project_dir string) bool {
 			line := scanner.Text()
 
 			message := check_progress(job, line)
-			printf("\033[2K\r%s", message)
+			printf(apply_color("\033[2K\r[$1%s$0] %s %s"), job.Name, filepath.Base(job.Target_Path), message)
 
 			program_state := check_errors(line)
 			if program_state != ALL_GOOD {
-				fmt.Println("error", program_state)
+				println("error", program_state.String())
 				break
 			}
 		}
@@ -140,6 +123,9 @@ func run_job(config *config, job *Job, project_dir string) bool {
 
 	// close job
 	job.Complete = true
+
+	println("complete!")
+
 	return true
 }
 
@@ -194,7 +180,7 @@ const (
 	py_false = "False\n"
 )
 
-func injected_expression(project_dir string, job *Job) string {
+func inject(project_dir string, job *Job) string {
 	buffer := strings.Builder {}
 	buffer.Grow(512)
 
@@ -213,6 +199,9 @@ func injected_expression(project_dir string, job *Job) string {
 	// @todo experimental for render time testing
 	buffer.WriteString("bpy.context.scene.render.use_render_cache = True\n")
 
+	buffer.WriteString(fmt.Sprintf("bpy.context.scene.frame_start = %d\n", job.Start_Frame))
+	buffer.WriteString(fmt.Sprintf("bpy.context.scene.frame_end   = %d\n", job.End_Frame))
+
 	if job.Resolution_X > 0 && job.Resolution_Y > 0 {
 		buffer.WriteString(fmt.Sprintf("bpy.context.scene.render.resolution_x = %d\n", job.Resolution_X))
 		buffer.WriteString(fmt.Sprintf("bpy.context.scene.render.resolution_y = %d\n", job.Resolution_Y))
@@ -220,7 +209,6 @@ func injected_expression(project_dir string, job *Job) string {
 	}
 
 	// whether to overwrite extant frames
-	// @todo currently always false unless manually edited in the order file
 	buffer.WriteString("bpy.context.scene.render.use_overwrite = ")
 	if job.Overwrite {
 		buffer.WriteString(py_true)
@@ -304,22 +292,22 @@ func check_progress(job *Job, input string) string {
 
 	if strings.HasPrefix(input, "Fra:") {
 		buffer.Grow(64)
-		buffer.WriteString("Frame: ")
 
 		for i, c := range input {
 			if unicode.IsSpace(c) {
 				the_frame := input[4:i]
 
 				percentage, ok := parse_uint(the_frame)
-
 				if ok {
 					percentage = uint(float64(percentage - job.Start_Frame) / float64(job.frame_count) * 100)
 				}
 
+				buffer.WriteString(fmt.Sprintf("| %d%% %s ", percentage, the_frame))
+
 				if strings.Contains(input, "Compositing") {
-					buffer.WriteString(fmt.Sprintf("%s (Composite) — %d%%", the_frame, percentage))
+					buffer.WriteString(apply_color("[$1composite$0] "))
 				} else {
-					buffer.WriteString(fmt.Sprintf("%s (Render) — %d%%", the_frame, percentage))
+					buffer.WriteString(apply_color("[$1render$0] "))
 				}
 				break
 			}
@@ -338,7 +326,6 @@ func check_progress(job *Job, input string) string {
 					}
 				}
 
-				buffer.WriteString(" — ")
 				buffer.WriteString(the_time)
 			}
 		}
