@@ -17,7 +17,6 @@ It takes care of queuing scenes for rendering, allowing large batches to be paus
 	- [Init](#init)
 	- [Order](#order)
 		- [Output Paths](#output-paths)
-		- [Caching](#caching)
 	- [List](#list)
 	- [Render](#render)
 	- [Clean](#clean)
@@ -80,7 +79,14 @@ Initialise a new Sous Chef directory.  This should be done at the top-level of a
 
 ### Order
 
-A render job in Sous Chef is called an "order".  You can create a new order with:
+A render job in Sous Chef is called an "order". Sous Chef can act in one of two ways in regards to order creation:
+
+- **Live copy**: It can create an order in-place, using the working copy of the film on disk, with obvious concurrency risks (editing assets could cause issues with the ongoing order).
+- **Cache**: It can cache an orders's files using [Blender Asset Tracer](#blender-asset-tracer), eliminating concurrency risks at the cost of disk space (a single order could feasibly require a full clone of the entire project, doubling the required disk space for the lifespan of the order).
+
+You can perform the latter with the `--cache` flag, but that's getting ahead of ourselves.
+
+For now, you can create a new order with:
 
 	souschef order path/to/file.blend
 
@@ -94,11 +100,13 @@ You can also specify the output location with a second unflagged argument:
 
 #### Output Paths
 
-The output path of a job is actually capable of taking into account file nodes in addition to standard compositor output.
+When specifying an output in a Sous Chef order, you should use a fully qualified Blender output path:
 
-Files can be set up for normal use, as if GUI rendering was being used.
+	some/folder/frame_####.jpg
 
-If the path is then overridden in a Sous Chef order, the program tries its very best to untangle all of the paths and move everything seamlessly to a new output location, preserving the various outputs' own relativity in that new directory.
+However, the output path of an order is actually capable of taking into account file nodes in addition to standard compositor output.  If your scene has file nodes, you should *not* use a fully qualified path and instead only supply a directory for the output.
+
+A scene with file nodes should be set up for normal use, as if GUI rendering was being used.  When the path is then overridden in a Sous Chef order, the program tries its very best to untangle all of the paths and move everything seamlessly to a new output location, preserving the various outputs' own relativity in that new directory.
 
 Consider a Blender file with a file node (with two outputs):
 
@@ -121,16 +129,7 @@ This file can be rendered in GUI without issue.  Now, if a Sous Chef order was t
 	R:\prod\04_01\shadow_pass\04_01_####.png
 	R:\prod\04_01\composite\04_01_####.tif
 
-> In case this wasn't clear, you *should* still use fully qualified paths (`path/to/frame_####.tiff`) for Sous Chef outputs.  You should only pass a directory as the output if the scene in question has file nodes; you'll cause all kinds of weird output otherwise.
-
 There's a high chance of bugs within this, and odd combinations of absolute and relative paths have not been thoroughly tested: *you have been warned!*
-
-#### Caching
-
-Sous Chef can act in one of two ways in regards to order creation:
-
-- **Live copy**: It can create an order in-place, using the working copy of the film on disk, with obvious concurrency risks (editing assets could cause issues with the ongoing order).
-- **Cache**: It can cache an orders's files using [Blender Asset Tracer](#blender-asset-tracer), eliminating concurrency risks at the cost of disk space (a single order could feasibly require a full clone of the entire project, doubling the required disk space for the lifespan of the order).
 
 ### List
 
