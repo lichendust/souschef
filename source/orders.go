@@ -40,7 +40,10 @@ type Job struct {
 // there should be better way to do this, but
 // reading Blender files reliably sucks
 func job_info(config *config, job *Job) {
-	const expression = `import bpy; print("sous_range", bpy.context.scene.frame_start, bpy.context.scene.frame_end); print("sous_res", bpy.context.scene.render.resolution_x, bpy.context.scene.render.resolution_y)`
+	const expression = `import bpy
+s = bpy.context.scene
+print("sous_range", s.frame_start, s.frame_end)
+print("sous_res", s.render.resolution_x, s.render.resolution_y, s.render.resolution_percentage)`
 
 	blender_path, ok := get_blender_path(config, job.Blender_Target)
 	if !ok {
@@ -81,7 +84,7 @@ func job_info(config *config, job *Job) {
 		if strings.HasPrefix(line, "sous_res") {
 			line = strings.TrimSpace(line[8:])
 
-			part := strings.SplitN(line, " ", 2)
+			part := strings.SplitN(line, " ", 3)
 
 			if x, ok := parse_uint(part[0]); ok {
 				job.Resolution_X = x
@@ -89,6 +92,23 @@ func job_info(config *config, job *Job) {
 			if x, ok := parse_uint(part[1]); ok {
 				job.Resolution_Y = x
 			}
+
+			percentage, ok := parse_uint(part[2])
+			if ok {
+				var m uint
+
+				if percentage > 100 {
+					m = percentage / 100
+				} else if percentage < 100 {
+					m = 100 / percentage
+				}
+
+				job.Resolution_X = m * job.Resolution_X
+				job.Resolution_Y = m * job.Resolution_Y
+			}
+
+			// @error needed here if we can't parse
+			// these values for whatever reason
 		}
 	}
 
