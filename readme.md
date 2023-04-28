@@ -2,7 +2,9 @@
 
 Sous Chef is a rendering assistant for large Blender projects.
 
-It helps with partitioning scenes and dependencies for rendering, as well as queueing and managing batches of renders, all with the goal of avoiding "my workstation is tied up right now" problems that sap valuable working time.
+It takes care of queuing scenes for rendering, allowing large batches to be paused and resumed, wrangles outputs (especially file nodes!) and generally makes offline rendering simpler for a solo artist or a tiny team.
+
+> Note: Sous Chef is alpha.  It's not quite polished or feature-complete, and its visuals can be a little ugly sometimes.  I've been using it with little issue on my own productions for quite some time, but releasing anything into the wild reveals hitherto unknowable quantities of bugs, even for a simple program.
 
 ## Table of Contents
 
@@ -14,6 +16,8 @@ It helps with partitioning scenes and dependencies for rendering, as well as que
 - [Basic Commands](#basic-commands)
 	- [Init](#init)
 	- [Order](#order)
+		- [Output Paths](#output-paths)
+		- [Caching](#caching)
 	- [List](#list)
 	- [Render](#render)
 	- [Clean](#clean)
@@ -53,7 +57,7 @@ Sous Chef is a single, portable binary that *tries* to contain everything.  It d
 
 ## Basic Commands
 
-The base Sous Chef commands, which should always be the first argument, are —
+The base Sous Chef commands, which should always be the first argument, are:
 
 - `init`
 - `order`
@@ -61,7 +65,7 @@ The base Sous Chef commands, which should always be the first argument, are —
 - `render`
 - `clean`
 
-There's also the usual self-explanatory stuff —
+There's also the usual self-explanatory stuff:
 
 - `help`
 - `version`
@@ -76,19 +80,52 @@ Initialise a new Sous Chef directory.  This should be done at the top-level of a
 
 ### Order
 
-A render job in Sous Chef is called an "order".  You can create a new order with —
+A render job in Sous Chef is called an "order".  You can create a new order with:
 
 	souschef order path/to/file.blend
 
-`order` is actually the default expression of Sous Chef, which means you can omit the keyword —
+`order` is actually the default expression of Sous Chef, which means you can omit the keyword:
 
 	souschef path/to/file.blend
 
-You can also specify the output location with a second unflagged argument —
+You can also specify the output location with a second unflagged argument:
 
-	souschef path/to/file.blend some/render/frame_######
+	souschef path/to/file.blend some/render/path
 
-The file paths for output are actually capable of taking into account file nodes in addition to standard compositor output.  Files can be set up for normal use, as if Sous Chef didn't exist.  If the path is then overridden in a Sous Chef order, the program tries its very best to untangle all of the paths and move everything seamlessly to a new output location, preserving the various outputs' own relativity in that new directory.  This *may be buggy right now*.  You have been warned.
+#### Output Paths
+
+The output path of a job is actually capable of taking into account file nodes in addition to standard compositor output.
+
+Files can be set up for normal use, as if GUI rendering was being used.
+
+If the path is then overridden in a Sous Chef order, the program tries its very best to untangle all of the paths and move everything seamlessly to a new output location, preserving the various outputs' own relativity in that new directory.
+
+Consider a Blender file with a file node (with two outputs):
+
+	//../render/04_01/
+
+	+ raw_exr/04_01_####.exr
+	+ shadow_pass/04_01_####.png
+
+— and a regular output path:
+
+	//../render/04_01/composite/04_01_####.tif
+
+This file can be rendered in GUI without issue.  Now, if a Sous Chef order was to be created with an entirely distinct output, on say, a NAS:
+
+	R:\prod\04_01
+
+— Sous Chef will adjust everything to provide the same relative structure you had locally:
+
+	R:\prod\04_01\raw_exr\04_01_####.exr
+	R:\prod\04_01\shadow_pass\04_01_####.png
+	R:\prod\04_01\composite\04_01_####.tif
+
+> In case this wasn't clear, you *should* still use fully qualified paths (`path/to/frame_####.tiff`) for Sous Chef outputs.  You should only pass a directory as the output if the scene in question has file nodes; you'll cause all kinds of weird output otherwise.
+
+There's a high chance of bugs within this, and odd combinations of absolute and relative paths have not been thoroughly tested: *you have been warned!*
+
+#### Caching
 
 Sous Chef can act in one of two ways in regards to order creation:
 
@@ -114,7 +151,7 @@ Creating a order is not *starting* a order.  Sous Chef can, once jobs have been 
 
 ### Clean
 
-You can purge the order directory with —
+You can purge the order directory with:
 
 	souschef clean
 
@@ -173,7 +210,7 @@ Override the frame-range.  If only one value is supplied, it's used as the end f
 
 ## Default Configuration
 
-When calling `souschef init`, the default project configuration will look something similar to this, adjusted for your operating system —
+When calling `souschef init`, the default project configuration will look something similar to this, adjusted for your operating system:
 
 ```toml
 default_target = "2.93"
