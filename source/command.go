@@ -1,4 +1,7 @@
 /*
+	Sous Chef
+	Copyright (C) 2022-2023 Harley Denham
+
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
 	the Free Software Foundation, either version 3 of the License, or
@@ -15,15 +18,11 @@
 
 package main
 
-import (
-	"os"
-	"fmt"
-	"time"
-	"bytes"
-	"path/filepath"
-
-	"github.com/BurntSushi/toml"
-)
+import "os"
+import "time"
+import "bytes"
+import "path/filepath"
+import "github.com/BurntSushi/toml"
 
 func command_help() {
 	println(PROGRAM)
@@ -38,85 +37,130 @@ func command_help() {
 }
 
 func command_init() {
-	if !make_directory(order_dir) {
+	if !make_directory(ORDER_DIR) {
 		return
 	}
-	if !write_file(config_path, config_file) {
+	if !write_file(CONFIG_PATH, config_file) {
 		return
 	}
-	println("initialised Sous Chef project")
+	printf("\n    initialised Sous Chef project\n\n")
 }
 
-func command_list(project_dir string) {
-	queue, ok := load_orders(project_dir, false)
+func command_list(config *Config) {
+	queue, ok := load_orders(config.project_dir, false)
 	if !ok {
 		return
 	}
 
 	if len(queue) == 0 {
-		println("no orders found!")
+		printf("\n    no orders found!\n\n")
 		return
 	}
-	for i, job := range queue {
-		print_order(i + 1, job)
+
+	print("\n")
+	for i, order := range queue {
+		print_order(i + 1, order)
 	}
+	print("\n")
 }
 
-func command_clean(project_dir string, args *arguments) {
-	queue, ok := load_orders(project_dir, false)
+func command_clean(config *Config, args *Arguments) {
+	queue, ok := load_orders(config.project_dir, false)
 	if !ok {
 		return
 	}
 
-	for _, job := range queue {
-		if args.hard_clean || job.Complete {
-			remove_file(order_path(project_dir, job.Name))
-			fmt.Printf("removed job %q\n", job.Name)
+	if len(queue) == 0 {
+		printf("\n    project is already clean!\n\n")
+		return
+	}
+
+	can_remove_any := false
+	for _, order := range queue {
+		if args.hard_clean || order.Complete {
+			can_remove_any = true
+			break
 		}
 	}
+
+	if !can_remove_any {
+		printf("\n    0/%d orders are eligible for deletion. use --hard to force.\n\n", len(queue))
+		return
+	}
+
+	count := 0
+
+	for _, order := range queue {
+		if args.hard_clean || order.Complete {
+			remove_file(order_path(config.project_dir, order.Name))
+			printf(apply_color("\n    [$1%s$0] removed"), order.Name)
+			count += 1
+		}
+	}
+
+	printf("\n\n    %d/%d orders removed.\n\n", count, len(queue))
 }
 
-func command_redo(project_dir string, args *arguments) {
-	queue, ok := load_orders(project_dir, false)
+func command_redo(config *Config, args *Arguments) {
+	queue, ok := load_orders(config.project_dir, false)
 	if !ok {
 		return
 	}
 
-	for _, job := range queue {
-		if job.Name == args.source_path {
-			job.Complete = false
-			job.Time     = time.Now()
+	for _, order := range queue {
+		if order.Name == args.source_path {
+			order.Complete = false
+			order.Time     = time.Now()
 
-			serialise_job(job, manifest_path(project_dir, job.Name))
+			save_order(order, manifest_path(config.project_dir, order.Name))
+			os.Remove(lock_path(config.project_dir, order.Name))
 			break
 		}
 	}
 }
 
-func command_targets(project_dir string, args *arguments) {
-	config, ok := load_config(filepath.Join(project_dir, config_path))
-	if !ok {
-		return
-	}
-
+func command_targets(config *Config, args *Arguments) {
 	if args.source_path != "" && args.output_path != "" {
+		name := args.source_path
+		path := filepath.ToSlash(args.output_path)
+
+		for _, c := range config.Blender_Target {
+			if c.Name == name && c.Path == path {
+				return
+			}
+		}
+
 		config.Blender_Target = append(config.Blender_Target, &Blender_Version{
 			Name: args.source_path,
 			Path: filepath.ToSlash(args.output_path),
 		})
 
-		buffer := bytes.Buffer{}
+		buffer := new(bytes.Buffer)
 		buffer.Grow(512)
 
-		if err := toml.NewEncoder(&buffer).Encode(config); err != nil {
-			eprintln("failed to encode config file")
+		if err := toml.NewEncoder(buffer).Encode(config); err != nil {
+			eprintln("\n    failed to encode config file.")
 		}
-		if err := os.WriteFile(filepath.Join(project_dir, config_path), buffer.Bytes(), 0777); err != nil {
-			eprintln("failed to write config file")
+		if err := os.WriteFile(filepath.Join(config.project_dir, CONFIG_PATH), buffer.Bytes(), os.ModePerm); err != nil {
+			eprintln("\n    failed to write config file.")
 		}
 	}
 
+	if len(config.Blender_Target) == 0 {
+		printf("\n    no Blender targets in config\n\n")
+		return
+	}
+
+	print("\n    NAME                 FILEPATH\n\n")
+
 	for _, t := range config.Blender_Target {
+		if !file_exists(t.Path) {
+			print(apply_color("[$1!$0] "))
+		} else {
+			print("    ")
+		}
 		printf("%-20s %s\n", t.Name, t.Path)
 	}
+
+	print("\n")
 }

@@ -45,8 +45,8 @@ for f in $build_dir/*; do
 
 	name=souschef_${base}_$version
 
-	cp -n license      $f/license.txt
-	cp -n readme.md    $f/readme.txt
+	cp -n license   $f/license.txt
+	cp -n readme.md $f/readme.txt
 
 	pushd $f > /dev/null
 	zip -r "../$name.zip" * > /dev/null

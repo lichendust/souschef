@@ -3,11 +3,4 @@ Render starts Sous Chef's queue and renders any jobs listed therein.
 $1Render Usage$0
 ------------
 
-    souschef $1render$0
-
-$1Watch$0
------
-
-    $1--watch -w$0
-
-[ALPHA: NOT IMPLEMENTED] Remain alive and watch the project directory for incoming orders, rendering them as they arrive.
+    $1render$0

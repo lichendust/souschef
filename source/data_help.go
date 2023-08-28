@@ -1,4 +1,7 @@
 /*
+	Sous Chef
+	Copyright (C) 2022-2023 Harley Denham
+
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
 	the Free Software Foundation, either version 3 of the License, or
@@ -37,8 +40,10 @@ $1Commands$0
     $1render$0   start the render queue
     $1clean$0    remove finished orders
     $1redo$0     reset an order so it can go again
-    $1target$0   view and add Blender targets
+    $1targets$0  view and add Blender targets
+
     $1help$0     print this message and others
+    $1version$0  print the version information
 
 Use $1souschef help [command]$0 for more information on each of 
 the above.
@@ -105,14 +110,22 @@ actually be omitted:
 $1Outputs$0
 -------
 
-The file paths for any order outputs are capable of taking into 
-account file nodes in addition to standard compositor output.  
-Files should be set up for normal use, as if Sous Chef didn't 
-exist.  If the path is then overridden in a Sous Chef order, 
-the program tries its very best to untangle all of the paths 
-and move everything seamlessly to a new output location, 
-preserving the various outputs' own relativity in that new 
-directory.
+When overriding a file path, Sous Chef will take into account 
+any additional file nodes in the scene's compositor tree, 
+redirecting all paths to the new output.
+
+A scene with file nodes should be set up for normal use: the 
+file should work when regular GUI rendering is being used.
+
+Sous Chef assumes all of the paths in the project are 
+well-formulated and relative; you usually want all your render 
+data coming out in the same place, but absolute paths work too.
+
+Even so, there's a high chance of bugs with complex 
+combinations of file outputs.  Certain odd combinations of 
+absolute and relative paths or mixed absolute mounting points 
+have not been thoroughly tested, so please be careful with 
+complex outputs.
 
 $1Cache$0
 -----
@@ -188,33 +201,25 @@ therein.
 $1Render Usage$0
 ------------
 
-    souschef $1render$0
-
-$1Watch$0
------
-
-    $1--watch -w$0
-
-[ALPHA: NOT IMPLEMENTED] Remain alive and watch the project 
-directory for incoming orders, rendering them as they arrive.
+    $1render$0
 `
-		case "target":
+		case "targets":
 			return `
-Target allows you to view and edit the available Blender 
+"Targets" allows you to view and edit the available Blender 
 targets in a Sous Chef project.
 
 $1Target Usage$0
 ------------
 
-    $1target [name] [path]$0
+    $1targets [name] [path]$0
 
-Target will, by default, list all available targets in the 
+"Targets" will, by default, list all available targets in the 
 project.
 
 $1Add New$0
 -------
 
-    $1souschef target "name" path/to/blender$0
+    $1souschef targets "name" path/to/blender$0
 
 Specify a target name and filepath to a build of Blender to 
 register a new target.

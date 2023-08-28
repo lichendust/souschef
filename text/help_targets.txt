@@ -1,0 +1,15 @@
+"Targets" allows you to view and edit the available Blender targets in a Sous Chef project.
+
+$1Target Usage$0
+------------
+
+    $1targets [name] [path]$0
+
+"Targets" will, by default, list all available targets in the project.
+
+$1Add New$0
+-------
+
+    $1souschef targets "name" path/to/blender$0
+
+Specify a target name and filepath to a build of Blender to register a new target.

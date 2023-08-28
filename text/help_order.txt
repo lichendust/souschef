@@ -12,7 +12,13 @@ Because 'order' is the default command, the keyword can actually be omitted:
 $1Outputs$0
 -------
 
-The file paths for any order outputs are capable of taking into account file nodes in addition to standard compositor output.  Files should be set up for normal use, as if Sous Chef didn't exist.  If the path is then overridden in a Sous Chef order, the program tries its very best to untangle all of the paths and move everything seamlessly to a new output location, preserving the various outputs' own relativity in that new directory.
+When overriding a file path, Sous Chef will take into account any additional file nodes in the scene's compositor tree, redirecting all paths to the new output.
+
+A scene with file nodes should be set up for normal use: the file should work when regular GUI rendering is being used.
+
+Sous Chef assumes all of the paths in the project are well-formulated and relative; you usually want all your render data coming out in the same place, but absolute paths work too.
+
+Even so, there's a high chance of bugs with complex combinations of file outputs.  Certain odd combinations of absolute and relative paths or mixed absolute mounting points have not been thoroughly tested, so please be careful with complex outputs.
 
 $1Cache$0
 -----
