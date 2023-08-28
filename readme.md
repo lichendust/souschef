@@ -30,6 +30,7 @@ It takes care of queuing scenes for rendering, allowing large batches to be paus
 - [Blender Asset Tracer](#blender-asset-tracer)
 	- [Installing BAT](#installing-bat)
 	- [Windows Users and the Subsystem](#windows-users-and-the-subsystem)
+- [Todo](#todo)
 
 <!-- /MarkdownTOC -->
 
@@ -288,5 +289,10 @@ BAT requires Python 3.10+ (though it seems Python 3+ is generally fine).
 If you are using Windows with the Subsystem for Linux, you'll still need to use the Windows build of Sous Chef and install Windows Python for BAT.  Mixing a Windows copy of Blender with WSL Python and Sous Chef *can work*, but the spaghetti of path mixing is untenable as a maintainer and infuriating to set up correctly for a user.
 
 I strongly recommend against it and will not aid you in supporting it, but it is technically possible. (Hint: Linux `souschef` and Python + BAT, with Windows Blender in the project configuration. Good luck!)
+
+## Todo
+
+- Scene defaults in project-level config. A small block of resolution/format/frame-ranges/render-levels, etc. that the project manager can label: "previz", "low_quality" "final_dcp", etc.
+- The original creator's hostname should appear in orders.
 
 [^1]: The very first version of Sous Chef was born out of the fact that I had a project stuck on proxy rigs in 2.93 but wanted to take advantage of Cycles X during the 3.0 transition.  I could work in 2.93 and render in 3.0 without worrying about accidentally breaking files or opening them in the wrong version and clattering the rigs.  This was during that 3.0-3.2 phase where proxy conversions just made everything worse.  It's less relevant now, but still a useful feature.

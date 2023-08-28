@@ -41,6 +41,7 @@ const (
 	COMMAND_CLEAN
 	COMMAND_RENDER
 	COMMAND_REDO
+	COMMAND_DELETE
 	COMMAND_TARGET
 )
 
@@ -115,6 +116,9 @@ func main() {
 
 	case COMMAND_REDO:
 		command_redo(config, args)
+
+	case COMMAND_DELETE:
+		command_delete(config, args)
 
 	case COMMAND_TARGET:
 		command_targets(config, args)
@@ -295,6 +299,11 @@ func get_arguments() (*Arguments, bool) {
 
 			case "redo":
 				conf.command = COMMAND_REDO
+				args = args[1:]
+				continue
+
+			case "delete":
+				conf.command = COMMAND_DELETE
 				args = args[1:]
 				continue
 

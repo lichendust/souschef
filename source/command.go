@@ -119,6 +119,20 @@ func command_redo(config *Config, args *Arguments) {
 	}
 }
 
+func command_delete(config *Config, args *Arguments) {
+	queue, ok := load_orders(config.project_dir, false)
+	if !ok {
+		return
+	}
+
+	for _, order := range queue {
+		if order.Name == args.source_path {
+			remove_file(order_path(config.project_dir, order.Name))
+			break
+		}
+	}
+}
+
 func command_targets(config *Config, args *Arguments) {
 	if args.source_path != "" && args.output_path != "" {
 		name := args.source_path
