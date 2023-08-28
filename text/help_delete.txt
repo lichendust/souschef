@@ -1,0 +1,6 @@
+Delete instantly removes a specific order from the queue.
+
+$1Redo Usage$0
+----------
+
+    $1delete [name]$0

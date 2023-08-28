@@ -40,6 +40,7 @@ $1Commands$0
     $1render$0   start the render queue
     $1clean$0    remove finished orders
     $1redo$0     reset an order so it can go again
+    $1delete$0   delete an order immediately
     $1targets$0  view and add Blender targets
 
     $1help$0     print this message and others
@@ -65,6 +66,15 @@ $1Hard$0
     $1--hard$0
 
 Removes $1all$0 orders, regardless of status.
+`
+		case "delete":
+			return `
+Delete instantly removes a specific order from the queue.
+
+$1Redo Usage$0
+----------
+
+    $1delete [name]$0
 `
 		case "init":
 			return `
