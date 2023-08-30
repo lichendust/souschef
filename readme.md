@@ -17,6 +17,8 @@ It takes care of queuing scenes for rendering, allowing large batches to be paus
 		- [Output Paths](#output-paths)
 	- [List](#list)
 	- [Render](#render)
+	- [Redo](#redo)
+	- [Delete](#delete)
 	- [Clean](#clean)
 - [Order Parameters](#order-parameters)
 	- [Cache](#cache)
@@ -42,17 +44,17 @@ Rather than many machines running one job, Sous Chef looks after one machine run
 
 To briefly explain, Sous Chef creates a directory — `.souschef` — in the root of a production's repository, most likely alongside a similar version control directory like `.git` or `.hg`.  This directory stores a running list of jobs that are queued in the order they arrive in (presently).  Each job may optionally hold an entire clone of the target scene and its dependencies, allowing work to progress without fear of changing resources during rendering.
 
-This mode allows scenes and their dependencies to be protected and locked while ongoing changes are made to the rest of the project.
-
 While Sous Chef was conceived for single users, it's easy to imagine it being used on a NAS or similar file share; a small team working from a shared drive or version control system with a single, large render node (like a big desktop with a couple of GPUs in it) that can be requested to perform their queued renders as needed.
 
 If the `.souschef` project is hosted on that same file share, Sous Chef can submit jobs centrally. The NAS itself will ensure all jobs are "published" to all users and the queue order is visible. That one beefy node can then be triggered as needed to work through the queue.
 
-Sous Chef also creates a temporary lock file in each order while it's being processed, with the hostname of the machine that got to that order first. So while a single render node is recommended, this actually enable multiple nodes to safely execute in parallel on the same file share, skipping any locked orders. This isn't a complex load-balanced system, but rather you can imagine this as several artists kicking off their machines to render before going home for the night:
+Sous Chef also creates a temporary lock file in each job while it's being processed, with the hostname of the machine that got to that job first. This was intended as a safety feature for the project's hosting, but it's actually a freebie for simple distributed rendering: you can imagine this as several artists kicking off their machines to render before going home for the night:
 
 	souschef render; shutdown
 
-In any multi-user scenario, Sous Chef is designed to leverage your existing file share infrastructure. It does not create or pollute your network with additional complexity. Simplicity is king.
+...while the lock files ensure each job is only tackled once.
+
+So while Sous Chef wasn't really intended for multi-node rendering, it was so simple to add it in this low-tech, zero-configuration fashion that it simply made sense to do so.
 
 ### Sous Chef?
 
@@ -70,6 +72,8 @@ The base Sous Chef commands, which should always be the first argument, are:
 - `order`
 - `list`
 - `render`
+- `redo`
+- `delete`
 - `clean`
 
 There's also the usual self-explanatory stuff:
@@ -157,6 +161,18 @@ Start rendering the currently registered list of jobs.
 Creating a order is not *starting* a order.  Once jobs are created, Sous Chef can be instructed to work through the queue.
 
 This allows resources to be allocated as needed: you might process your entire queue overnight on a particularly powerful machine, or you may want to instruct your team to all set their machines rendering as they leave for the day. Sous Chef's lock files ensure multiple machines can cooperate on a queue. You can read more about that [here](#lock-files).
+
+### Redo
+
+	souschef redo [name]
+
+Resets the "complete" status of a selected order, moving it to the end of the queue. This allows it to be restarted without needing to fetch or regenerate any new data. Useful if something minor went wrong that can be quickly fixed in place (like a faulty output path).
+
+### Delete
+
+	souschef delete [name]
+
+Instantly deletes the specified order from the queue. It's gone.
 
 ### Clean
 
