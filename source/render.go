@@ -265,7 +265,7 @@ def abs_path(path):
 def dirname(path):
     return path[:-len(basename(path))]
 
-output_path = bpy.path.native_pathsep("%s")
+output_path = "%s"
 source_path = abs_path(bpy.context.scene.render.filepath)
 
 common_paths = []
@@ -279,18 +279,23 @@ for node in bpy.context.scene.node_tree.nodes:
         node_path = abs_path(node.base_path)
         common_paths.append(commonpath([source_path, node_path]))
 
-shortest_common = min(common_paths, key=len)
+if len(common_paths) > 0:
+    shortest_common = min(common_paths, key=len)
 
-for node in bpy.context.scene.node_tree.nodes:
-    if node.mute or "ignore" in node.label.lower():
-        continue
-    if node.type == 'OUTPUT_FILE':
-        if is_abs(node.base_path):
+    for node in bpy.context.scene.node_tree.nodes:
+        if node.mute or "ignore" in node.label.lower():
             continue
-        node_path = abs_path(node.base_path)[len(shortest_common) + 1:]
-        node.base_path = join(output_path, node_path) + os.sep
+        if node.type == 'OUTPUT_FILE':
+            if is_abs(node.base_path):
+                continue
+            node_path = abs_path(node.base_path)[len(shortest_common) + 1:]
+            node.base_path = join(output_path, node_path) + os.sep
 
-bpy.context.scene.render.filepath = join(output_path, source_path[len(shortest_common) + 1:])
+    if len(common_paths) > 0:
+        bpy.context.scene.render.filepath = join(output_path, source_path[len(shortest_common) + 1:])
+
+else:
+	bpy.context.scene.render.filepath = output_path
 `
 
 func inject(project_dir string, order *Order) string {
@@ -300,7 +305,8 @@ func inject(project_dir string, order *Order) string {
 	buffer.WriteString("import bpy\n")
 
 	if order.Output_Path != "." {
-		buffer.WriteString(fmt.Sprintf(PATH_REWRITER, filepath.ToSlash(filepath.Join(project_dir, order.Output_Path))))
+		path := filepath.ToSlash(filepath.Join(project_dir, order.Output_Path))
+		buffer.WriteString(fmt.Sprintf(PATH_REWRITER, path))
 	}
 
 	// auto-tiling for Blender 3+

@@ -18,20 +18,22 @@
 
 package main
 
+const OS_CONFIG_PATH = SOUS_DIR + "/config_linux.toml"
+
 const config_file = `# the version to use by default when creating
 # a new order
-default_target = "3.6"
+default_target = "4.0"
 
 # these are example versions that may not
 # match your system. please add, remove or
 # update paths that are relevant to you
 [[target]]
-name = "2.93"
-path = "~/software/blender_2.93/blender"
+name = "3.0"
+path = "~/software/blender_3.0/blender"
 
 [[target]]
-name = "3.6"
-path = "~/software/blender_3.6/blender"
+name = "4.0"
+path = "~/software/blender_4.0/blender"
 
 [[target]]
 name = "canary"

@@ -42,13 +42,13 @@ Unlike most farm tools that focus on distributing and managing render workloads 
 
 Rather than many machines running one job, Sous Chef looks after one machine running many jobs.
 
-To briefly explain, Sous Chef creates a directory — `.souschef` — in the root of a production's repository, most likely alongside a similar version control directory like `.git` or `.hg`.  This directory stores a running list of jobs that are queued in the order they arrive in (presently).  Each job may optionally hold an entire clone of the target scene and its dependencies, allowing work to progress without fear of changing resources during rendering.
+To briefly explain, Sous Chef creates a directory — `.souschef` — in the root of a production's repository, most likely alongside a similar version control directory like `.git` or `.hg`.  This directory stores a running list of jobs that are queued in the order they arrive in.  Each job may optionally hold an entire clone of the target scene and its dependencies, allowing work to progress without fear of assets changing while a render is unknowingly happening somewhere else.
 
 While Sous Chef was conceived for single users, it's easy to imagine it being used on a NAS or similar file share; a small team working from a shared drive or version control system with a single, large render node (like a big desktop with a couple of GPUs in it) that can be requested to perform their queued renders as needed.
 
 If the `.souschef` project is hosted on that same file share, Sous Chef can submit jobs centrally. The NAS itself will ensure all jobs are "published" to all users and the queue order is visible. That one beefy node can then be triggered as needed to work through the queue.
 
-Sous Chef also creates a temporary lock file in each job while it's being processed, with the hostname of the machine that got to that job first. This was intended as a safety feature for the project's hosting, but it's actually a freebie for simple distributed rendering: you can imagine this as several artists kicking off their machines to render before going home for the night:
+Sous Chef also creates a temporary lock file in each job while it's being processed, with the hostname of the machine that got to that job first. This was intended as a safety feature for the project's hosting, but it's actually a freebie for simple distributed rendering; you can imagine this as several artists kicking off their machines to render before going home for the night:
 
 	souschef render; shutdown
 
@@ -238,13 +238,13 @@ Override the frame-range.  If only one value is supplied, it's used as the end f
 
 Whenever Sous Chef is actively rendering an order, a `lock.txt` file is created in the order's directory. This lock file contains the hostname of the machine currently hosting the instance of Blender with the file open.
 
-As stated in the [Manifesto](#manifesto), this is in service of a narrow use-case where multiple machines are processing the same queue.
+As stated in the [manifesto](#manifesto), this is in service of a narrow use-case where multiple machines are processing the same queue.
 
 The machine that first created a lock file can always reopen its own lock files, because Sous Chef assumes that you'll never be silly enough to run multiple instances of the `render` command on the same machine.
 
 This also ensures that in the event of Sous Chef being killed with `ctrl`+`c` or unexpected shutdown — where the lock file will **not** be deleted — the same machine can just continue where it left off when restarted, because it has automatic approval for that order.
 
-For any scenario where it is an issue, `souschef redo [name]` also clears the lock file, freeing the order up.
+For any other scenario where this is an issue, `souschef redo [name]` will clear the lock file, freeing the order up.
 
 ## Default Configuration
 
@@ -268,15 +268,28 @@ path = "X:/dev/buildbot/custom-blender.exe"
 
 This configuration is primarily aimed at sorting out Blender versions, especially if you're extremely sensible and lock versions on projects or even distribute internal portable builds to ensure things don't break across artists' computers.
 
-You can use any name you like for each target and create as many targets as you wish.  When you use the `--target` flag, the name is the value you pass.
+You can use any label — `name` — you like for each target and create as many targets as you wish.  When you use the `--target` flag, the label is the value you pass.
 
-Right now, this is the config's only purpose, but in future it may support project-wide templating such as output directories or rendering conventions/settings.
+You can also create multiple, operating system level configuration files —
+
+- `config.toml`
+- `config_linux.toml`
+- `config_macos.toml`
+- `config_windows.toml`
+
+`config.toml` is the standard fallback for all operating systems; if you're a single user, or your shop is entirely one operating system, you can just use that.  But if multiple OSes are accessing and rendering for a project on a single shared-volume, you'll want to set their paths accordingly.
+
+Obviously, if you're assuming every order can be fulfilled by any other machine accessing the production, you'll need to make sure your target labels match across all platforms *and* that your installation paths are the same on each machine running the same operating system.
+
+> Right now, all of this is the config's only purpose, but in future it may support project-wide templating such as output directories or rendering conventions/settings.
+>
+> I'm quite partial to the idea of automatically generated render directories that are templated from the scene file paths.
 
 ## Version Control
 
-If you use project-wide version control, it is recommended to add exclusion rules for `.souschef/orders`, but *check in* the project configuration file `.souschef/config.toml`.
+If you use project-wide version control, it is recommended to add exclusion rules for `.souschef/orders`, but *check in* the configuration `.toml` files.
 
-`.souschef` should also be created in the same location as the root of the VCS, alongside `.hg` or `.git`.
+`.souschef` should also be created in the same location as the root of the VCS, alongside `.hg` or `.git`.  Sous Chef uses the same 'search upwards' mechanism as most VCSes, so you can invoke it from anywhere inside the project hierarchy.
 
 ## Blender Asset Tracer
 
@@ -286,13 +299,13 @@ Sous Chef should not rely on BAT long term.  In an ideal world, BAT would functi
 
 The complexity, planned inconsistency and lack of documentation for the Blender file format — a `.blend` is merely a direct serialisation of Blender's entire runtime scene data structure — makes writing an external program that parses it difficult.
 
-This is why Sous Chef actually calls to Blender itself to get information about new orders, by loading the file, having it print relevant information and then closing.  Even Blender's own DNA inspectors [use Blender itself](https://projects.blender.org/blender/blender/src/branch/main/doc/blender_file_format) to write the dump.
+This is why Sous Chef actually calls to Blender itself to get information about new orders, by loading the file, then asks it to print out relevant information.  Even Blender's own DNA inspectors [use Blender itself](https://projects.blender.org/blender/blender/src/branch/main/doc/blender_file_format) to write the dump.
 
-Directly porting BAT could be an option, but at 8.5K lines of Python, it's very much a non-trivial exercise that would require the attention of a developer who wholly understands BAT itself and the intricacies of Blender's innards.
+Directly porting BAT could be an option, but at ~8.5K lines of Python, it's very much a non-trivial exercise that would require the attention of a developer who wholly understands BAT itself and the intricacies of Blender's innards.
 
 ### Installing BAT
 
-To be clear, only the cache feature of Sous Chef requires BAT.  For the intended audience of Sous Chef — single artists — it's more than likely that BAT is not necessary.
+To be clear, only the cache feature of Sous Chef requires BAT.
 
 BAT requires Python 3.10+ (though it seems Python 3+ is generally fine).
 
@@ -302,9 +315,9 @@ BAT requires Python 3.10+ (though it seems Python 3+ is generally fine).
 
 ### Windows Users and the Subsystem
 
-If you are using Windows with the Subsystem for Linux, you'll still need to use the Windows build of Sous Chef and install Windows Python for BAT.  Mixing a Windows copy of Blender with WSL Python and Sous Chef *can work*, but the spaghetti of path mixing is untenable as a maintainer and infuriating to set up correctly for a user.
+If you are using Windows with the Subsystem for Linux, you'll still need to use the Windows build of Sous Chef and install Windows Python for BAT.  Mixing a Windows copy of Blender with WSL Python and Sous Chef can work, but the spaghetti of path mixing is untenable as a maintainer and infuriating to set up correctly for a user.
 
-I strongly recommend against it and will not aid you in supporting it, but it is technically possible. (Hint: Linux `souschef` and Python + BAT, with Windows Blender in the project configuration. Good luck!)
+I strongly recommend against it and will not aid you in supporting it, but it is technically possible. (Hint: Linux `souschef` and Python + BAT, with `/mnt/c/` Windows Blender paths in the project configuration. Good luck!)
 
 ## Todo
 

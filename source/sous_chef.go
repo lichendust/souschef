@@ -23,12 +23,12 @@ import "strings"
 import "path/filepath"
 import "github.com/BurntSushi/toml"
 
-const VERSION = "v0.1.1"
+const VERSION = "v0.1.2"
 const PROGRAM = "Sous Chef " + VERSION
 
 const SOUS_DIR      = ".souschef"
-const ORDER_DIR     = ".souschef/orders"
-const CONFIG_PATH   = ".souschef/config.toml"
+const ORDER_DIR     = SOUS_DIR + "/orders"
+const CONFIG_PATH   = SOUS_DIR + "/config.toml"
 const MANIFEST_NAME = "order.toml"
 const LOCK_NAME     = "lock.txt"
 
@@ -148,7 +148,12 @@ func load_config() (*Config, bool) {
 		return nil, false
 	}
 
-	blob, ok := load_file(filepath.Join(cwd, CONFIG_PATH))
+	conf_path := filepath.Join(cwd, OS_CONFIG_PATH)
+	if !file_exists(conf_path) {
+		conf_path = filepath.Join(cwd, CONFIG_PATH)
+	}
+
+	blob, ok := load_file(conf_path)
 	if !ok {
 		return nil, false
 	}

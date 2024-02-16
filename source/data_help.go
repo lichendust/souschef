@@ -160,8 +160,8 @@ $1Replace$0
 
     $1--replace name$0
 
-Create a new order with new parameters, but specifically 
-overwrite an existing order.  This will $1not$0 keep its 
+Create a new order with new parameters, but do so while also 
+replacing an existing order.  This will $1not$0 preserve its 
 timestamp and will bump it to the back of the queue.  The 
 entire order is rebuilt.
 
