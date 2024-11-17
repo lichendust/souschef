@@ -171,7 +171,7 @@ $1Placeholders$0
     $1--placeholders yes|no$0
     $1-p yes|no$0
 
-Force placeholder files on or off in render output.  Ommission 
+Force placeholder files on or off in render output.  Omission 
 of this flag will leave the decision to the Blender file.
 
 $1Overwrite$0
@@ -180,7 +180,7 @@ $1Overwrite$0
     $1--overwrite yes|no$0
     $1-o yes|no$0
 
-Force overwriting of files in render output.  Ommission of this 
+Force overwriting of files in render output.  Omission of this 
 flag will leave the decision to the Blender file.
 
 $1Resolution$0
@@ -191,8 +191,7 @@ $1Resolution$0
 Overrides the output resolution.  Both X and Y dimensions must 
 be supplied.
 
-There is also an (incomplete) shortcut table of common 
-resolutions:
+There is also a minimal shortcut table of common resolutions:
 
     $1UHD$0     3840 x 2160
     $1HD$0      1920 x 1080

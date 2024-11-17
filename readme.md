@@ -19,13 +19,16 @@ It takes care of queuing scenes for rendering, allowing large batches to be paus
 		- [Output Paths](#output-paths)
 	- [List](#list)
 	- [Render](#render)
+	- [Clean](#clean)
 	- [Redo](#redo)
 	- [Delete](#delete)
-	- [Clean](#clean)
+	- [Targets](#targets)
 - [Order Parameters](#order-parameters)
 	- [Cache](#cache)
 	- [Target](#target)
 	- [Replace](#replace)
+	- [Placeholders](#placeholders)
+	- [Overwrite](#overwrite)
 	- [Resolution](#resolution)
 	- [Frame](#frame)
 - [Lock Files](#lock-files)
@@ -72,9 +75,10 @@ The base Sous Chef commands, which should always be the first argument, are:
 - `order`
 - `list`
 - `render`
+- `clean`
 - `redo`
 - `delete`
-- `clean`
+- `targets`
 
 There's also the usual self-explanatory stuff:
 
@@ -160,6 +164,14 @@ Creating a order is not *starting* a order.  Once jobs are created, Sous Chef ca
 
 This allows resources to be allocated as needed: you might process your entire queue overnight on a particularly powerful machine.
 
+### Clean
+
+You can purge the order directory with:
+
+	souschef clean
+
+This only removes finished jobs by default, but you can purge all jobs with the additional `--hard` flag.
+
 ### Redo
 
 	souschef redo [name]
@@ -172,13 +184,11 @@ Resets the 'completed' status of a selected order, moving it to the end of the q
 
 Instantly deletes the specified order from the queue. It's gone.
 
-### Clean
+### Targets
 
-You can purge the order directory with:
+	souschef targets
 
-	souschef clean
-
-This only removes finished jobs by default, but you can purge all jobs with the additional `--hard` flag.
+List all targets specified by the project.  Targets whose Blender executables cannot be found at the specified path will be highlighted red.
 
 ## Order Parameters
 
@@ -208,6 +218,20 @@ Create a new order with new parameters, but specifically overwrite an existing o
 
 Useful for any missed configuration, but it will rebuild the entire order.
 
+### Placeholders
+
+	--placeholders yes|no
+	-p yes|no
+
+Force placeholder files on or off in render output.  Omission of this flag will leave the decision to the Blender file.
+
+### Overwrite
+
+    --overwrite yes|no
+    -o yes|no
+
+Force overwriting of frames in render output.  Omission of this flag will leave the decision to the Blender file.
+
 ### Resolution
 
 	--resolution 1000x1000
@@ -215,7 +239,7 @@ Useful for any missed configuration, but it will rebuild the entire order.
 
 Override the output resolution.  Both X and Y dimensions must be supplied.
 
-Sous Chef also has a very primitive shortcut table, which is currently hard-coded to a few basics that I use myself because I'm very lazy.  I'm documenting them here for now, but these *will change in future* because they need to.
+Sous Chef also has a very primitive shortcut table, which is currently hard-coded to a few basics that I use myself because I'm very lazy.  I'm documenting them here for now, but these *will change and/or be expanded in future* because they need to.
 
 	-r dcp4k
 
