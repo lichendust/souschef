@@ -6,7 +6,7 @@ Full Release
 
 ### Features
 
-- Improved then quality of Sous Chef's output: it's now much nicer to look at and provides more information.
+- Improved the quality of Sous Chef's output: it's now much nicer to look at and provides more information.
 - Added configurable placeholder behaviour.
 
 ### Bugs

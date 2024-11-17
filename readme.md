@@ -6,6 +6,10 @@ Sous Chef is a rendering assistant for large Blender projects.
 
 It takes care of queuing scenes for rendering, allowing large batches to be paused and resumed, wrangles outputs (especially File Nodes!) and generally makes offline rendering simpler for a solo artist or a small team.
 
+You can [download Meander from itch.io](https://lichendust.itch.io/meander) for free!
+
+[<img height="60px" src="https://static.itch.io/images/badge-color.svg">](https://lichendust.itch.io/souschef)
+
 ## Table of Contents
 
 <!-- MarkdownTOC autolink="true" -->
@@ -46,6 +50,8 @@ It takes care of queuing scenes for rendering, allowing large batches to be paus
 Unlike most farm tools that focus on distributing and managing render workloads across many computers, like [Flamenco](https://flamenco.io), Sous Chef is the opposite.
 
 Rather than looking after and feeding jobs to many machines running one job, Sous Chef looks after one machine running many jobs in a queue.
+
+Basically, it's more of a render allotment than a render farm.
 
 To briefly explain, Sous Chef creates a directory — `.souschef` — in the root of a production's repository, most likely alongside a similar version control directory like `.git` or `.hg`.  You then push jobs into the queue, which are tracked in the `.souschef` directory.
 
