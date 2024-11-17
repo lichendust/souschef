@@ -20,9 +20,7 @@ package main
 
 import "os"
 import "time"
-import "bytes"
 import "path/filepath"
-import "github.com/BurntSushi/toml"
 
 func command_help() {
 	println(PROGRAM)
@@ -43,7 +41,6 @@ func command_init() {
 	if !write_file(CONFIG_PATH, config_file) {
 		return
 	}
-	printf("\n    initialised Sous Chef project\n\n")
 }
 
 func command_list(config *Config) {
@@ -53,15 +50,38 @@ func command_list(config *Config) {
 	}
 
 	if len(queue) == 0 {
-		printf("\n    no orders found!\n\n")
+		printf("No orders found!\n")
 		return
 	}
 
-	print("\n")
-	for i, order := range queue {
-		print_order(i + 1, order)
+	printf("\n")
+
+	index := 0
+	for _, order := range queue {
+		if order.Complete {
+			printf("✓  ")
+		} else {
+			index += 1
+			printf("%-3d", index)
+		}
+
+		printf(apply_color("[$1%s$0] %s\n"), order.Name, filepath.Base(order.Source_Path))
+
+		printf("   Using:        %s\n",       order.Blender_Target)
+		printf("   Frame Range:  %d -> %d\n", order.Start_Frame,  order.End_Frame)
+		printf("   Resolution:   %d x %d\n",  order.Resolution_X, order.Resolution_Y)
+
+		printf("   Placeholders: %s\n", format_fallback_bool(order.Use_Placeholders))
+		printf("   Overwriting:  %s\n", format_fallback_bool(order.Overwrite))
+
+		if order.Output_Path == "." {
+			printf("   Output Path:  %s\n", SET_BY_FILE)
+		} else {
+			printf("   Output Path:  %s\n", order.Output_Path)
+		}
+
+		printf("\n")
 	}
-	print("\n")
 }
 
 func command_clean(config *Config, args *Arguments) {
@@ -71,7 +91,6 @@ func command_clean(config *Config, args *Arguments) {
 	}
 
 	if len(queue) == 0 {
-		printf("\n    project is already clean!\n\n")
 		return
 	}
 
@@ -84,7 +103,7 @@ func command_clean(config *Config, args *Arguments) {
 	}
 
 	if !can_remove_any {
-		printf("\n    0/%d orders are eligible for deletion. use --hard to force.\n\n", len(queue))
+		printf("0/%d orders are eligible for deletion. Use --hard to force\n", len(queue))
 		return
 	}
 
@@ -93,12 +112,12 @@ func command_clean(config *Config, args *Arguments) {
 	for _, order := range queue {
 		if args.hard_clean || order.Complete {
 			remove_file(order_path(config.project_dir, order.Name))
-			printf(apply_color("\n    [$1%s$0] removed"), order.Name)
+			printf(apply_color("[$1%s$0] removed!\n"), order.Name)
 			count += 1
 		}
 	}
 
-	printf("\n\n    %d/%d orders removed.\n\n", count, len(queue))
+	printf("%d/%d orders removed\n", count, len(queue))
 }
 
 func command_redo(config *Config, args *Arguments) {
@@ -117,6 +136,9 @@ func command_redo(config *Config, args *Arguments) {
 			break
 		}
 	}
+
+	// @todo if something else removes its lock file,
+	// Sous Chef should probably stop that job for safety reasons
 }
 
 func command_delete(config *Config, args *Arguments) {
@@ -134,47 +156,18 @@ func command_delete(config *Config, args *Arguments) {
 }
 
 func command_targets(config *Config, args *Arguments) {
-	if args.source_path != "" && args.output_path != "" {
-		name := args.source_path
-		path := filepath.ToSlash(args.output_path)
-
-		for _, c := range config.Blender_Target {
-			if c.Name == name && c.Path == path {
-				return
-			}
-		}
-
-		config.Blender_Target = append(config.Blender_Target, &Blender_Version{
-			Name: args.source_path,
-			Path: filepath.ToSlash(args.output_path),
-		})
-
-		buffer := new(bytes.Buffer)
-		buffer.Grow(512)
-
-		if err := toml.NewEncoder(buffer).Encode(config); err != nil {
-			eprintln("\n    failed to encode config file.")
-		}
-		if err := os.WriteFile(filepath.Join(config.project_dir, CONFIG_PATH), buffer.Bytes(), os.ModePerm); err != nil {
-			eprintln("\n    failed to write config file.")
-		}
-	}
-
 	if len(config.Blender_Target) == 0 {
-		printf("\n    no Blender targets in config\n\n")
+		printf("No Blender targets in config.toml\n")
 		return
 	}
 
-	print("\n    NAME                 FILEPATH\n\n")
+	print("Target Name          Blender Path\n")
 
 	for _, t := range config.Blender_Target {
 		if !file_exists(t.Path) {
-			print(apply_color("[$1!$0] "))
+			printf(apply_color("$1%-20s %s\n$0"), t.Name, t.Path)
 		} else {
-			print("    ")
+			printf("%-20s %s\n", t.Name, t.Path)
 		}
-		printf("%-20s %s\n", t.Name, t.Path)
 	}
-
-	print("\n")
 }

@@ -22,7 +22,7 @@ const OS_CONFIG_PATH = SOUS_DIR + "/config_macos.toml"
 
 const config_file = `# the version to use by default when creating
 # a new order
-default_target = "4.0"
+default_target = "4.2"
 
 # these are example versions that may not
 # match your system. please add, remove or
@@ -32,8 +32,8 @@ name = "3.0"
 path = "/Applications/Blender 3.0.app/Contents/MacOS/blender"
 
 [[target]]
-name = "4.0"
-path = "/Applications/Blender 4.0.app/Contents/MacOS/blender"
+name = "4.2"
+path = "/Applications/Blender 4.2.app/Contents/MacOS/blender"
 
 [[target]]
 name = "canary"

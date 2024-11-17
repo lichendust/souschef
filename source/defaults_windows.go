@@ -22,7 +22,7 @@ const OS_CONFIG_PATH = SOUS_DIR + "/config_windows.toml"
 
 const config_file = `# the version to use by default when creating
 # a new order
-default_target = "4.0"
+default_target = "4.2"
 
 # these are example versions that may not
 # match your system. please add, remove or
@@ -32,8 +32,8 @@ name = "3.0"
 path = "C:/Program Files/Blender Foundation/Blender 3.0/blender.exe"
 
 [[target]]
-name = "4.0"
-path = "C:/Program Files/Blender Foundation/Blender 4.0/blender.exe"
+name = "4.2"
+path = "C:/Program Files/Blender Foundation/Blender 4.2/blender.exe"
 
 [[target]]
 name = "canary"

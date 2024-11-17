@@ -41,6 +41,22 @@ $1Replace$0
 
 Create a new order with new parameters, but do so while also replacing an existing order.  This will $1not$0 preserve its timestamp and will bump it to the back of the queue.  The entire order is rebuilt.
 
+$1Placeholders$0
+--------------
+
+    $1--placeholders yes|no$0
+    $1-p yes|no$0
+
+Force placeholder files on or off in render output.  Ommission of this flag will leave the decision to the Blender file.
+
+$1Overwrite$0
+-----------
+
+    $1--overwrite yes|no$0
+    $1-o yes|no$0
+
+Force overwriting of files in render output.  Ommission of this flag will leave the decision to the Blender file.
+
 $1Resolution$0
 ----------
 

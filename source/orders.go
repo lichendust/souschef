@@ -50,19 +50,38 @@ type Order struct {
 	Target_Path string       `toml:"target_path"`
 	Output_Path string       `toml:"output_path"`
 
-	Overwrite bool           `toml:"overwrite,omitempty"`
+	Overwrite        uint8   `toml:"overwrite"`
+	Use_Placeholders uint8   `toml:"use_placeholders"`
 
-	Complete  bool           `toml:"complete,omitempty"`
+	Complete  bool           `toml:"complete"`
+}
+
+const (
+	UNSPECIFIED uint8 = iota
+	YES
+	NO
+)
+
+const SET_BY_FILE = "[set by file]"
+
+func format_fallback_bool(value uint8) string {
+	switch value {
+	case YES:
+		return "true"
+	case NO:
+		return "false"
+	}
+	return SET_BY_FILE
 }
 
 func command_order(config *Config, args *Arguments) {
 	if !file_exists(args.source_path) {
-		eprintf(apply_color("\n    unfortunately, $1%q$0 does not exist.\n"), args.source_path)
+		eprintf(apply_color("$1%q$0 does not exist.\n"), args.source_path)
 		return
 	}
 
 	if filepath.Ext(args.source_path) != ".blend" {
-		eprintf(apply_color("\n   unfortunately, $1%q$0 is not a Blender file.\n"), args.source_path)
+		eprintf(apply_color("$1%q$0 is not a Blender file.\n"), args.source_path)
 		return
 	}
 
@@ -82,13 +101,14 @@ func command_order(config *Config, args *Arguments) {
 	the_order.Source_Path = args.source_path
 	the_order.Output_Path = args.output_path
 
-	the_order.Overwrite = args.overwrite
+	basename := filepath.Base(the_order.Source_Path)
 
-	printf(apply_color("\n    [$1%s$0] order up!\n\n"), the_order.Name)
+	the_order.Overwrite        = args.overwrite
+	the_order.Use_Placeholders = args.use_placeholders
 
 	if args.blender_target == "" {
 		if config.Default_Target == "" {
-			eprintln("    no Blender target has been provided in config.toml or this command")
+			eprintln("No Blender target has been provided!")
 			return
 		}
 		the_order.Blender_Target = config.Default_Target
@@ -96,12 +116,14 @@ func command_order(config *Config, args *Arguments) {
 		the_order.Blender_Target = args.blender_target
 	}
 
-	printf("    gathering information from file...")
+	printf("Gathering information from %s...", basename)
 
 	success := order_info(config, the_order)
 	if !success {
+		eprintf("Failed to gather information from %s!\n", basename)
 		return
 	}
+
 	printf(RESET_LINE)
 
 	if args.start_frame != 0 && args.end_frame != 0 {
@@ -116,30 +138,33 @@ func command_order(config *Config, args *Arguments) {
 		the_order.Resolution_Y = args.resolution_y
 	}
 
+	save_path := order_path(config.project_dir, the_order.Name)
+
 	if args.bank_order {
-		printf("    generating cached copy...")
+		if !args.is_bat_installed {
+			eprintln("BAT is not discoverable on path: the --cache flag will not work.")
+			return
+		}
 
-		pack_path := order_path(config.project_dir, the_order.Name)
+		printf("Generating cached copy of %s with BAT...", basename)
 
-		cmd := exec.Command("bat", "pack", the_order.Source_Path, pack_path)
+		cmd := exec.Command("bat", "pack", the_order.Source_Path, save_path)
 
 		err := cmd.Start()
 		if err != nil {
-			panic(err)
+			eprintln("Failed to start BAT!")
+			return
 		}
 
 		err = cmd.Wait()
 		if err != nil {
-			panic(err)
+			eprintln("Failed to cache order using BAT!")
+			return
 		}
-
-		the_order.Target_Path = filepath.Join(ORDER_DIR, the_order.Name, filepath.Base(the_order.Source_Path))
 
 		printf(RESET_LINE)
 
-		if size, ok := dir_size(pack_path); ok {
-			printf("    final cached order size is %.2fMB\n\n", size)
-		}
+		the_order.Target_Path = filepath.Join(ORDER_DIR, the_order.Name, basename)
 	}
 
 	the_order.Source_Path, _ = filepath.Rel(config.project_dir, the_order.Source_Path)
@@ -150,10 +175,18 @@ func command_order(config *Config, args *Arguments) {
 
 	if !args.bank_order {
 		the_order.Target_Path = the_order.Source_Path
-		make_directory(order_path(config.project_dir, the_order.Name))
+		make_directory(save_path)
 	}
 
 	save_order(the_order, manifest_path(config.project_dir, the_order.Name))
+	printf(apply_color("[$1%s$0] %s"), the_order.Name, basename)
+
+	if args.bank_order {
+		if size, ok := dir_size(save_path); ok {
+			printf(" | %.2fMB cache size", size)
+		}
+	}
+	printf("\n")
 }
 
 // there should be better way to do this, but
@@ -213,16 +246,9 @@ print("sous_res", s.render.resolution_x, s.render.resolution_y, s.render.resolut
 
 			percentage, ok := parse_uint(part[2])
 			if ok {
-				m := uint(1)
-
-				if percentage > 100 {
-					m = percentage / 100
-				} else if percentage < 100 {
-					m = 100 / percentage
-				}
-
-				order.Resolution_X *= m
-				order.Resolution_Y *= m
+				m := float64(percentage) / 100
+				order.Resolution_X = uint(float64(order.Resolution_X) * m)
+				order.Resolution_Y = uint(float64(order.Resolution_Y) * m)
 			}
 
 			// @error needed here if we can't parse.
@@ -234,19 +260,6 @@ print("sous_res", s.render.resolution_x, s.render.resolution_y, s.render.resolut
 
 	cmd.Wait()
 	return true
-}
-
-func print_order(i int, order *Order) {
-	complete := ""
-	if order.Complete {
-		complete = "complete!"
-	}
-
-	printf(apply_color("    %-3d [$1%s$0]    %-20s f:%d-%d r:%dx%d %s\n"),
-		i, order.Name, filepath.Base(order.Source_Path),
-		order.Start_Frame, order.End_Frame,
-		order.Resolution_X, order.Resolution_Y,
-		complete)
 }
 
 type Order_Array []*Order
@@ -261,22 +274,22 @@ func (orders Order_Array) Swap(i, j int) {
 	orders[i], orders[j] = orders[j], orders[i]
 }
 
-func (order *Order) String() string {
+/*func (order *Order) String() string {
 	return fmt.Sprintf("[%s]\nsource %s\ntarget %s\noutput %s\n", order.Name, order.Source_Path, order.Target_Path, order.Output_Path)
-}
+}*/
 
 func save_order(order *Order, file_path string) bool {
 	buffer := bytes.Buffer{}
 	buffer.Grow(512)
 
 	if err := toml.NewEncoder(&buffer).Encode(order); err != nil {
-		eprintln("failed to encode order file")
+		eprintln("Failed to encode order file")
 		return false
 	}
 
 	if err := os.WriteFile(file_path, buffer.Bytes(), 0777); err != nil {
 		fmt.Println(err)
-		eprintln("failed to write order file")
+		eprintln("Failed to write order file")
 		return false
 	}
 
@@ -286,7 +299,6 @@ func save_order(order *Order, file_path string) bool {
 func load_order(path string) (*Order, bool) {
 	blob, ok := load_file(path)
 	if !ok {
-		eprintf("failed to read order at %q\n", path)
 		return nil, false
 	}
 
@@ -294,7 +306,7 @@ func load_order(path string) (*Order, bool) {
 
 	_, err := toml.Decode(blob, data)
 	if err != nil {
-		eprintf("failed to parse order at %q\n", path)
+		panic(err)
 		return nil, false
 	}
 
@@ -353,7 +365,7 @@ func load_orders(root string, shallow bool) ([]*Order, bool) {
 	})
 
 	if err != nil {
-		printf("\n    Sous Chef failed to read orders from disk!\n\n")
+		printf("Sous Chef failed to read orders from .souschef!\n")
 		return nil, false
 	}
 

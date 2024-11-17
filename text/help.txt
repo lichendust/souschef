@@ -11,9 +11,9 @@ $1Commands$0
     $1list$0     show the list of current orders
     $1render$0   start the render queue
     $1clean$0    remove finished orders
-    $1redo$0     reset an order so it can go again
+    $1redo$0     reset an order so it can run again
     $1delete$0   delete an order immediately
-    $1targets$0  view and add Blender targets
+    $1targets$0  view Blender targets
 
     $1help$0     print this message and others
     $1version$0  print the version information

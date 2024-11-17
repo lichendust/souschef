@@ -58,7 +58,7 @@ func make_directory(path string) bool {
 	err := os.MkdirAll(path, os.ModeDir | os.ModePerm)
 
 	if err != nil {
-		eprintf("failed to create directory %q\n", path)
+		eprintf("Failed to create directory %q\n", path)
 		return false
 	}
 
@@ -68,7 +68,7 @@ func make_directory(path string) bool {
 func write_file(path, content string) bool {
 	err := os.WriteFile(path, []byte(content), os.ModePerm)
 	if err != nil {
-		eprintf("failed to write file %q\n", path)
+		eprintf("Failed to write file %q\n", path)
 		return false
 	}
 
@@ -78,7 +78,7 @@ func write_file(path, content string) bool {
 func remove_file(path string) bool {
 	err := os.RemoveAll(path)
 	if err != nil {
-		eprintf("failed to delete file %q\n", path)
+		eprintf("Failed to delete file %q\n", path)
 		return false
 	}
 
@@ -169,13 +169,12 @@ func eprintln(words ...string) {
 
 func eprintf(format string, guff ...any) {
 	fmt.Fprintf(os.Stderr, format, guff...)
-	os.Stderr.WriteString("\n")
 }
 
 func hostname() string {
 	h, err := os.Hostname()
 	if err != nil {
-		eprintf("\n    failed to get hostname! is this computer okay?\n\n")
+		eprintf("Failed to get hostname! is this computer okay?\n")
 		return ""
 	}
 	return h

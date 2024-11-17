@@ -1,8 +1,10 @@
 # 🍱 Sous Chef
 
+![](https://stuff.lichendust.com/media/souschef.webp)
+
 Sous Chef is a rendering assistant for large Blender projects.
 
-It takes care of queuing scenes for rendering, allowing large batches to be paused and resumed, wrangles outputs (especially file nodes!) and generally makes offline rendering simpler for a solo artist or a small team.
+It takes care of queuing scenes for rendering, allowing large batches to be paused and resumed, wrangles outputs (especially File Nodes!) and generally makes offline rendering simpler for a solo artist or a small team.
 
 ## Table of Contents
 
@@ -10,7 +12,7 @@ It takes care of queuing scenes for rendering, allowing large batches to be paus
 
 - [Manifesto](#manifesto)
 	- [Sous Chef?](#sous-chef)
-- [Usage](#usage)
+- [Getting Started](#getting-started)
 - [Basic Commands](#basic-commands)
 	- [Init](#init)
 	- [Order](#order)
@@ -40,29 +42,27 @@ It takes care of queuing scenes for rendering, allowing large batches to be paus
 
 Unlike most farm tools that focus on distributing and managing render workloads across many computers, like [Flamenco](https://flamenco.io), Sous Chef is the opposite.
 
-Rather than many machines running one job, Sous Chef looks after one machine running many jobs.
+Rather than looking after and feeding jobs to many machines running one job, Sous Chef looks after one machine running many jobs in a queue.
 
-To briefly explain, Sous Chef creates a directory — `.souschef` — in the root of a production's repository, most likely alongside a similar version control directory like `.git` or `.hg`.  This directory stores a running list of jobs that are queued in the order they arrive in.  Each job may optionally hold an entire clone of the target scene and its dependencies, allowing work to progress without fear of assets changing while a render is unknowingly happening somewhere else.
-
-While Sous Chef was conceived for single users, it's easy to imagine it being used on a NAS or similar file share; a small team working from a shared drive or version control system with a single, large render node (like a big desktop with a couple of GPUs in it) that can be requested to perform their queued renders as needed.
-
-If the `.souschef` project is hosted on that same file share, Sous Chef can submit jobs centrally. The NAS itself will ensure all jobs are "published" to all users and the queue order is visible. That one beefy node can then be triggered as needed to work through the queue.
-
-Sous Chef also creates a temporary lock file in each job while it's being processed, with the hostname of the machine that got to that job first. This was intended as a safety feature for the project's hosting, but it's actually a freebie for simple distributed rendering; you can imagine this as several artists kicking off their machines to render before going home for the night:
-
-	souschef render; shutdown
-
-...while the lock files ensure each job is only tackled once.
-
-So while Sous Chef wasn't really intended for multi-node rendering, it was so simple to add it in this low-tech, zero-configuration fashion that it simply made sense to do so.
+To briefly explain, Sous Chef creates a directory — `.souschef` — in the root of a production's repository, most likely alongside a similar version control directory like `.git` or `.hg`.  You then push jobs into the queue, which are tracked in the `.souschef` directory.
 
 ### Sous Chef?
 
-*'Sous Chef'* is an oblique reference to an analogy I use to explain the rendering step to people who actually go outside: If modelling and animating are the cooking, then rendering is putting it all in the oven at the end.  If you're the head chef, Sous Chef is the... well, sous.
+*'Sous Chef'* is an oblique reference to an analogy I use to explain the rendering step to people who actually go outside: If modelling and animating are the cooking, then rendering is putting it all in the oven at the end.  If you're the head chef, Sous Chef is the... sous.
 
-## Usage
+## Getting Started
 
 Sous Chef is a single, portable binary that *tries* to contain everything.  It does optionally depend on Python for the caching feature — [see below](#blender-asset-tracer).
+
+1. After installing on your system, navigate to the highest level of your film or VFX project.
+2. Run `souschef init` to create a new project.
+3. Run `souschef targets` to view the example Blender targets.
+4. Edit `.souschef/config.toml` to set up your Blender targets.
+5. Navigate through your project and open a new job with `souschef order [file.blend]`.
+6. View the current render queue with `souschef list`.
+7. Start rendering the whole queue with `souschef render`.
+
+See below for more detail on every command, or use `souschef help [command]` for the built-in instruction manual.
 
 ## Basic Commands
 
@@ -94,7 +94,7 @@ Initialise a new Sous Chef directory.  This should be done at the top-level of a
 A render job in Sous Chef is called an "order". Sous Chef can act in one of two ways in regards to order creation:
 
 - **Live copy**: It can create an order in-place, using the working copy of the film on disk, with obvious concurrency risks (editing assets could cause issues with the ongoing order).
-- **Cache**: It can cache an orders's files using [Blender Asset Tracer](#blender-asset-tracer), eliminating concurrency risks at the cost of disk space (a single order could feasibly require a full clone of the entire project, doubling the required disk space for the lifespan of the order).
+- **Cache**: It can cache an orders's files using [Blender Asset Tracer](#blender-asset-tracer), eliminating concurrency risks at the cost of disk space (a single order could feasibly require a full clone of the entire project, depending on how complex the dependency tree is, thus doubling the required disk space for the lifespan of the order).
 
 You can perform the latter with the `--cache` flag, but that's getting ahead of ourselves.
 
@@ -116,23 +116,21 @@ When specifying an output in a Sous Chef order, you should use a fully qualified
 
 	some/sequence/frame_####.jpg
 
-However, the output path of an order is capable of taking into account file nodes in addition to standard compositor output.  If your scene has file nodes, you should *not* use a fully qualified path and instead only supply a directory for the output:
+However, if you are using File Nodes in the Compositor, Sous Chef will account for these.  If your scene has File Nodes, you should *not* use a fully qualified path and instead only supply a directory for the output:
 
 	some/sequence/
 
-A scene with file nodes should be set up for normal use: the file should work when regular GUI rendering is being used.  When the path is then overridden in a Sous Chef order, the program tries its very best to untangle all of the paths and move everything seamlessly to a new output location, preserving the various outputs' own relativity in that new directory.
-
-Consider a Blender file with a file node (containing two sequences):
+Sous Chef will patch up all the various file paths on your system and construct the shortest shared output location. Consider a Blender file with a File Node in the Compositor (containing two sequences):
 
 	path: //../render/04_01/
 	seq1: raw_exr/04_01_####.exr
 	seq2: shadow_pass/04_01_####.png
 
-— and a regular, file-level output path:
+— and the standard output panel in the Properties tab:
 
 	//../render/04_01/composite/04_01_####.tif
 
-This file can be rendered in GUI without issue.  Now, if a Sous Chef order was to be created with an entirely distinct output, on say, a NAS:
+Now, if a Sous Chef order was to be created with an entirely distinct output, on say, a NAS:
 
 	R:/prod/04_01
 
@@ -142,9 +140,9 @@ This file can be rendered in GUI without issue.  Now, if a Sous Chef order was t
 	R:/prod/04_01/shadow_pass/04_01_####.png
 	R:/prod/04_01/composite/04_01_####.tif
 
-Sous Chef assumes all of the paths in the project are well-formulated and relative; you usually want all your render data coming out in the same place, but absolute paths work too.
+Sous Chef assumes all of the paths in the project are well-formulated and relative; you usually want all your render data coming out in the same place, but absolute paths can work too, so long as they're on the same drive — Sous Chef needs an obvious shared root to fix up the paths.
 
-Even so, there's a high chance of bugs with complex combinations of file outputs.  Certain odd combinations of absolute and relative paths or mixed absolute mounting points have not been thoroughly tested, so please be careful with complex outputs.
+As with any early software, there's a high chance of bugs with complex combinations of file outputs.  Certain odd combinations of absolute and relative paths have not been thoroughly tested, so please be careful with complex outputs.
 
 ### List
 
@@ -156,17 +154,17 @@ Show a list of the current jobs, active, complete or otherwise.
 
 	souschef render
 
-Start rendering the currently registered list of jobs.
+Start rendering the current queue of orders.
 
 Creating a order is not *starting* a order.  Once jobs are created, Sous Chef can be instructed to work through the queue.
 
-This allows resources to be allocated as needed: you might process your entire queue overnight on a particularly powerful machine, or you may want to instruct your team to all set their machines rendering as they leave for the day. Sous Chef's lock files ensure multiple machines can cooperate on a queue. You can read more about that [here](#lock-files).
+This allows resources to be allocated as needed: you might process your entire queue overnight on a particularly powerful machine.
 
 ### Redo
 
 	souschef redo [name]
 
-Resets the "complete" status of a selected order, moving it to the end of the queue. This allows it to be restarted without needing to fetch or regenerate any new data. Useful if something minor went wrong that can be quickly fixed in place (like a faulty output path).
+Resets the 'completed' status of a selected order, moving it to the end of the queue. This allows it to be restarted without needing to fetch or regenerate any new data. Useful if something minor went wrong that can be quickly fixed in place (like a faulty output path).
 
 ### Delete
 
@@ -217,7 +215,7 @@ Useful for any missed configuration, but it will rebuild the entire order.
 
 Override the output resolution.  Both X and Y dimensions must be supplied.
 
-Sous Chef also has a very primitive shortcut table, which is currently hard-coded to a few basics (because they're all the ones I use).  I'm documenting them here for now, but these *will almost certainly change*.
+Sous Chef also has a very primitive shortcut table, which is currently hard-coded to a few basics that I use myself because I'm very lazy.  I'm documenting them here for now, but these *will change in future* because they need to.
 
 	-r dcp4k
 
@@ -238,13 +236,13 @@ Override the frame-range.  If only one value is supplied, it's used as the end f
 
 Whenever Sous Chef is actively rendering an order, a `lock.txt` file is created in the order's directory. This lock file contains the hostname of the machine currently hosting the instance of Blender with the file open.
 
-As stated in the [manifesto](#manifesto), this is in service of a narrow use-case where multiple machines are processing the same queue.
+This is in service of a narrow use-case where multiple machines can simultaneously process the same queue, such as on a NAS.
 
 The machine that first created a lock file can always reopen its own lock files, because Sous Chef assumes that you'll never be silly enough to run multiple instances of the `render` command on the same machine.
 
 This also ensures that in the event of Sous Chef being killed with `ctrl`+`c` or unexpected shutdown — where the lock file will **not** be deleted — the same machine can just continue where it left off when restarted, because it has automatic approval for that order.
 
-For any other scenario where this is an issue, `souschef redo [name]` will clear the lock file, freeing the order up.
+For any other scenario where this is an issue, `souschef redo <order>` will clear the lock file, freeing the order up.
 
 ## Default Configuration
 
@@ -299,7 +297,7 @@ Sous Chef should not rely on BAT long term.  In an ideal world, BAT would functi
 
 The complexity, planned inconsistency and lack of documentation for the Blender file format — a `.blend` is merely a direct serialisation of Blender's entire runtime scene data structure — makes writing an external program that parses it difficult.
 
-This is why Sous Chef actually calls to Blender itself to get information about new orders, by loading the file, then asks it to print out relevant information.  Even Blender's own DNA inspectors [use Blender itself](https://projects.blender.org/blender/blender/src/branch/main/doc/blender_file_format) to write the dump.
+This is why Sous Chef actually calls to Blender itself to get information about new orders, by loading the file, then asking it to print out relevant information.  Even Blender's own DNA inspectors [use Blender itself](https://projects.blender.org/blender/blender/src/branch/main/doc/blender_file_format) to write the dump.
 
 Directly porting BAT could be an option, but at ~8.5K lines of Python, it's very much a non-trivial exercise that would require the attention of a developer who wholly understands BAT itself and the intricacies of Blender's innards.
 
@@ -309,7 +307,7 @@ To be clear, only the cache feature of Sous Chef requires BAT.
 
 BAT requires Python 3.10+ (though it seems Python 3+ is generally fine).
 
-1. Run `pip3 install blender-asset-manager`.
+1. Run `pip3 install blender_asset_tracer`.
 2. Ensure your PATH is correctly set up to allow the new `bat` command to run natively.  `pip` should warn if this is not already the case.
 3. Sous Chef should now be able to find the BAT command after a restart of your shell.
 

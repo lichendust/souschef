@@ -116,6 +116,7 @@ func check_progress(order *Order, input string) string {
 	return buffer.String()
 }
 
+// @todo we're probably missing a lot of errors nowadays
 func check_errors(input string) Blender_Error {
 	switch true {
 	case strings.Contains(input, "std::bad_alloc"):
@@ -149,11 +150,9 @@ func command_render(config *Config, args *Arguments) {
 	}
 
 	if len(queue) == 0 {
-		printf("\n    no orders to render!\n\n")
+		printf("No orders to render!\n")
 		return
 	}
-
-	printf("\n")
 
 	for len(queue) > 0 {
 		the_order := queue[0]
@@ -173,7 +172,7 @@ func command_render(config *Config, args *Arguments) {
 
 		did_run := run_order(config, the_order)
 		if !did_run {
-			println("failed!")
+			println("Failed!")
 			queue = queue[1:]
 			continue
 		}
@@ -189,8 +188,6 @@ func command_render(config *Config, args *Arguments) {
 
 		queue = queue[1:]
 	}
-
-	printf("\n")
 }
 
 func run_order(config *Config, order *Order) bool {
@@ -225,7 +222,7 @@ func run_order(config *Config, order *Order) bool {
 			line := scanner.Text()
 
 			message := check_progress(order, line)
-			printf(apply_color(RESET_LINE + "    [$1%s$0] %s %s"), order.Name, filepath.Base(order.Target_Path), message)
+			printf(apply_color(RESET_LINE + "[$1%s$0] %s %s"), order.Name, filepath.Base(order.Target_Path), message)
 
 			program_state := check_errors(line)
 			if program_state != ALL_GOOD {
@@ -242,7 +239,7 @@ func run_order(config *Config, order *Order) bool {
 	}
 
 	order.Complete = true
-	printf("    complete!\n")
+	printf(" ✓\n")
 
 	return true
 }
@@ -312,9 +309,6 @@ func inject(project_dir string, order *Order) string {
 	// auto-tiling for Blender 3+
 	buffer.WriteString("bpy.context.scene.cycles.use_auto_tile = (bpy.app.version[0] < 3)\n")
 
-	// always remove placeholders because it interferes with restarts
-	buffer.WriteString("bpy.context.scene.render.use_placeholder = False\n")
-
 	buffer.WriteString("bpy.context.scene.render.use_render_cache = True\n")
 
 	buffer.WriteString(fmt.Sprintf("bpy.context.scene.frame_start = %d\n", order.Start_Frame))
@@ -326,12 +320,22 @@ func inject(project_dir string, order *Order) string {
 		buffer.WriteString("bpy.context.scene.render.resolution_percentage = 100\n")
 	}
 
-	// whether to overwrite extant frames
-	buffer.WriteString("bpy.context.scene.render.use_overwrite = ")
-	if order.Overwrite {
-		buffer.WriteString("True\n")
-	} else {
-		buffer.WriteString("False\n")
+	if order.Use_Placeholders != UNSPECIFIED {
+		buffer.WriteString("bpy.context.scene.render.use_placeholder = ")
+		if order.Use_Placeholders == YES {
+			buffer.WriteString("True\n")
+		} else {
+			buffer.WriteString("False\n")
+		}
+	}
+
+	if order.Overwrite != UNSPECIFIED {
+		buffer.WriteString("bpy.context.scene.render.use_overwrite = ")
+		if order.Overwrite == YES {
+			buffer.WriteString("True\n")
+		} else {
+			buffer.WriteString("False\n")
+		}
 	}
 
 	return buffer.String()

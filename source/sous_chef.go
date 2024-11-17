@@ -19,11 +19,12 @@
 package main
 
 import "os"
+import "os/exec"
 import "strings"
 import "path/filepath"
 import "github.com/BurntSushi/toml"
 
-const VERSION = "v0.1.2"
+const VERSION = "v0.2.0"
 const PROGRAM = "Sous Chef " + VERSION
 
 const SOUS_DIR      = ".souschef"
@@ -51,15 +52,18 @@ type Arguments struct {
 
 	replace_id string
 
-	bank_order     bool
-	start_frame    uint
-	end_frame      uint
-	resolution_x   uint
-	resolution_y   uint
-	overwrite      bool
-	source_path    string
-	output_path    string
-	blender_target string
+	bank_order       bool
+	start_frame      uint
+	end_frame        uint
+	resolution_x     uint
+	resolution_y     uint
+	overwrite        uint8
+	use_placeholders uint8
+	source_path      string
+	output_path      string
+	blender_target   string
+
+	is_bat_installed bool
 }
 
 type Config struct {
@@ -97,7 +101,7 @@ func main() {
 
 	config, ok := load_config()
 	if !ok {
-		eprintf("\n    unfortunately, this isn't a Sous Chef project!\n")
+		eprintf("Cannot locate .souschef project!\n")
 		return
 	}
 
@@ -138,7 +142,14 @@ func load_config() (*Config, bool) {
 			break
 		}
 
-		cwd = cwd[:len(cwd) - len(filepath.Base(cwd)) - 1]
+		l := len(cwd) - len(filepath.Base(cwd)) - 1
+		if l < 0 {
+			break
+		}
+
+		println(cwd[:1])
+
+		cwd = cwd[:l]
 		if len(cwd) == 0 {
 			break
 		}
@@ -197,7 +208,7 @@ func get_blender_path(config *Config, t string) (string, bool) {
 		}
 
 		if !found_path {
-			eprintf(apply_color("\n    target $1%q$0 not in config\n\n"), t)
+			eprintf(apply_color("Target $1%q$0 not in config.toml\n"), t)
 			return "", false
 		}
 	}
@@ -351,7 +362,23 @@ func get_arguments() (*Arguments, bool) {
 			continue
 
 		case "overwrite", "o":
-			conf.overwrite = true
+			counter++
+			b = strings.ToLower(b)
+			if b == "yes" {
+				conf.overwrite = YES
+			} else if b == "no" {
+				conf.overwrite = NO
+			}
+			continue
+
+		case "placeholders", "p":
+			counter++
+			b = strings.ToLower(b)
+			if b == "yes" {
+				conf.use_placeholders = YES
+			} else if b == "no" {
+				conf.use_placeholders = NO
+			}
 			continue
 
 		case "resolution", "r":
@@ -407,7 +434,7 @@ func get_arguments() (*Arguments, bool) {
 			return conf, true
 
 		default:
-			eprintf("\n    args: %q flag is unknown\n\n", a)
+			eprintf("Arguments: %q flag is unknown\n", a)
 			has_errors = true
 
 			if b != "" {
@@ -421,7 +448,7 @@ func get_arguments() (*Arguments, bool) {
 		case 1:
 			conf.output_path = args[0]
 		default:
-			eprintf("\n    args: too many path arguments\n\n")
+			eprintf("Arguments: too many path arguments\n")
 			has_errors = true
 		}
 
@@ -431,6 +458,14 @@ func get_arguments() (*Arguments, bool) {
 	if conf.command == COMMAND_ORDER && conf.source_path == "" {
 		conf.command = COMMAND_HELP
 		has_errors = true
+	}
+
+	// check for the existence of BAT
+	{
+		_, err := exec.LookPath("bat")
+		if err == nil {
+			conf.is_bat_installed = true
+		}
 	}
 
 	return conf, !has_errors

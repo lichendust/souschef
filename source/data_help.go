@@ -39,9 +39,9 @@ $1Commands$0
     $1list$0     show the list of current orders
     $1render$0   start the render queue
     $1clean$0    remove finished orders
-    $1redo$0     reset an order so it can go again
+    $1redo$0     reset an order so it can run again
     $1delete$0   delete an order immediately
-    $1targets$0  view and add Blender targets
+    $1targets$0  view Blender targets
 
     $1help$0     print this message and others
     $1version$0  print the version information
@@ -165,6 +165,24 @@ replacing an existing order.  This will $1not$0 preserve its
 timestamp and will bump it to the back of the queue.  The 
 entire order is rebuilt.
 
+$1Placeholders$0
+--------------
+
+    $1--placeholders yes|no$0
+    $1-p yes|no$0
+
+Force placeholder files on or off in render output.  Ommission 
+of this flag will leave the decision to the Blender file.
+
+$1Overwrite$0
+-----------
+
+    $1--overwrite yes|no$0
+    $1-o yes|no$0
+
+Force overwriting of files in render output.  Ommission of this 
+flag will leave the decision to the Blender file.
+
 $1Resolution$0
 ----------
 
@@ -215,24 +233,13 @@ $1Render Usage$0
 `
 		case "targets":
 			return `
-"Targets" allows you to view and edit the available Blender 
+Targets allows you to view and edit the available Blender 
 targets in a Sous Chef project.
 
 $1Target Usage$0
 ------------
 
-    $1targets [name] [path]$0
-
-"Targets" will, by default, list all available targets in the 
-project.
-
-$1Add New$0
--------
-
-    $1souschef targets "name" path/to/blender$0
-
-Specify a target name and filepath to a build of Blender to 
-register a new target.
+    $1targets$0
 `
 	}
 	return help("help")

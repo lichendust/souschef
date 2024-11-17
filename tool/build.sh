@@ -43,7 +43,7 @@ for f in $build_dir/*; do
 
 	echo $base
 
-	name=souschef_${base}_$version
+	name=souschef_${base}_${version}
 
 	cp -n license   $f/license.txt
 	cp -n readme.md $f/readme.txt
