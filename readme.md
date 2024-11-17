@@ -6,7 +6,7 @@ Sous Chef is a rendering assistant for large Blender projects.
 
 It takes care of queuing scenes for rendering, allowing large batches to be paused and resumed, wrangles outputs (especially File Nodes!) and generally makes offline rendering simpler for a solo artist or a small team.
 
-You can [download Meander from itch.io](https://lichendust.itch.io/meander) for free!
+You can [download Sous Chef from itch.io](https://lichendust.itch.io/souschef) for free!
 
 [<img height="60px" src="https://static.itch.io/images/badge-color.svg">](https://lichendust.itch.io/souschef)
 
