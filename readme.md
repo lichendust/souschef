@@ -53,7 +53,7 @@ Rather than looking after and feeding jobs to many machines running one job, Sou
 
 Basically, it's more of a render allotment than a render farm.
 
-To briefly explain, Sous Chef creates a directory — `.souschef` — in the root of a production's repository, most likely alongside a similar version control directory like `.git` or `.hg`.  You then push jobs into the queue, which are tracked in the `.souschef` directory.
+To briefly explain, Sous Chef creates a directory — `.souschef` — in the root of a production's repository, most likely alongside a similar version control directory like `.git` or `.hg`.  You then push jobs into the queue, which are tracked in the `.souschef` directory.  Each job can, at your discretion, simply point to a file and render it as part of the queue at some point, or it can cache an entire copy of the scene and all of its dependencies, keeping a shot *and* its assets safe for the critical time after locking it while it gets rendered.  Work doesn't just have to stop for fear of assets changing mid-render as they're being refined and updated throughout the production.
 
 ### Sous Chef?
 
